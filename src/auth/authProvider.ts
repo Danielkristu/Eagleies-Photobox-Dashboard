@@ -18,7 +18,7 @@ async function syncUserToFirestore(user: any) {
       });
 
       if (role === "client") {
-        const clientRef = doc(db, "clients", user.uid);
+        const clientRef = doc(db, "Clients", user.uid);
         await setDoc(clientRef, {
           name: user.displayName || "",
           xendit_api_key: "",

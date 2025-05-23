@@ -10,7 +10,7 @@ import { AppConfigEdit } from "./pages/AppConfigEdit";
 import { TransactionReport } from "./pages/TransactionReport";
 import Login from "./pages/Login";
 import { authProvider } from "./auth/authProvider";
-
+import HomePage from "./pages/HomePage";
 import routerBindings, {
   DocumentTitleHandler,
   UnsavedChangesNotifier,
@@ -66,10 +66,14 @@ function App() {
                   }}
                 >
                   <Routes>
-                    {/* Login tanpa layout */}
+                    {/* Login route */}
                     <Route path="/login" element={<Login />} />
-
-                    {/* Semua halaman lain pakai layout */}
+                    {/* Home route */}
+                    <Route path="/" element={<HomePage />} />{" "}
+                    {/* Ganti / ke HomePage */}
+                    {/* Optionally, keep the WelcomePage at another path */}
+                    <Route path="/welcome" element={<WelcomePage />} />
+                    {/* Protected route for the rest */}
                     <Route
                       element={
                         <ThemedLayoutV2>
@@ -77,7 +81,6 @@ function App() {
                         </ThemedLayoutV2>
                       }
                     >
-                      <Route index element={<WelcomePage />} />
                       <Route path="/voucher" element={<VoucherList />} />
                       <Route
                         path="/voucher/create"
