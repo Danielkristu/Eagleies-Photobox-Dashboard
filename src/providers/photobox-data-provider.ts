@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   DataProvider,
@@ -6,16 +7,73 @@ import {
   UpdateParams,
   UpdateResponse,
   BaseRecord,
-  CustomParams,
+  CreateParams,
+  CreateResponse,
+  GetListParams,
+  GetListResponse,
+  DeleteOneParams,
+  DeleteOneResponse,
 } from "@refinedev/core";
-import { doc, getDoc, setDoc, DocumentData } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  DocumentData,
+  updateDoc,
+  collection,
+  getDocs,
+  deleteDoc,
+} from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import { db } from "../firebase";
 
+// Helper function to get boothId from Firestore
+const getBoothId = async (userId: string): Promise<string> => {
+  const userRef = doc(db, "users", userId);
+  const userSnap = await getDoc(userRef);
+
+  if (!userSnap.exists()) {
+    throw new Error("User not found");
+  }
+
+  const userData = userSnap.data();
+  if (userData.role !== "client") {
+    throw new Error("User is not a client");
+  }
+
+  const clientId = userId;
+  const boothsRef = collection(db, `clients/${clientId}/booths`);
+  const boothsSnapshot = await getDocs(boothsRef);
+
+  if (boothsSnapshot.empty) {
+    throw new Error("No booths found for this client");
+  }
+
+  const boothDoc = boothsSnapshot.docs[0];
+  return boothDoc.id;
+};
+
 export const photoboxDataProvider: DataProvider = {
+  getApiUrl: () => "",
+
   getOne: async <TData extends BaseRecord = BaseRecord>(
     params: GetOneParams
   ): Promise<GetOneResponse<TData>> => {
-    const docRef = doc(db, "Photobox", params.id as string);
+    const auth = getAuth();
+    const userId = auth.currentUser?.uid;
+    if (!userId) {
+      throw new Error("User not authenticated");
+    }
+    const boothId = await getBoothId(userId);
+    const docRef = doc(
+      db,
+      "clients",
+      userId,
+      "booths",
+      boothId,
+      "Configs",
+      params.id as string
+    );
     const snapshot = await getDoc(docRef);
 
     if (!snapshot.exists()) {
@@ -29,46 +87,124 @@ export const photoboxDataProvider: DataProvider = {
 
   update: async <
     TData extends BaseRecord = BaseRecord,
-    TVariables = NonNullable<unknown>
+    TVariables extends Record<string, any> = Record<string, any> // Updated to allow any properties
   >(
     params: UpdateParams<TVariables>
   ): Promise<UpdateResponse<TData>> => {
-    const docRef = doc(db, "Photobox", params.id as string);
-    await setDoc(docRef, params.variables as object, { merge: true });
+    const auth = getAuth();
+    const userId = auth.currentUser?.uid;
+    if (!userId) {
+      throw new Error("User not authenticated");
+    }
+    const boothId = await getBoothId(userId);
+    const docRef = doc(
+      db,
+      "clients",
+      userId,
+      "booths",
+      boothId,
+      "Configs",
+      params.id as string
+    );
+
+    await updateDoc(docRef, params.variables);
 
     return {
       data: {
         id: params.id,
         ...(params.variables as object),
-      } as unknown as TData,
+      } as TData,
     };
   },
 
-  getList: async <TData extends BaseRecord = BaseRecord>(): Promise<{
-    data: TData[];
-    total: number;
-  }> => ({
-    data: [] as TData[],
-    total: 0,
-  }),
+  getList: async <TData extends BaseRecord = BaseRecord>(
+    params: GetListParams
+  ): Promise<GetListResponse<TData>> => {
+    const auth = getAuth();
+    const userId = auth.currentUser?.uid;
+    if (!userId) {
+      throw new Error("User not authenticated");
+    }
+    const boothId = await getBoothId(userId);
+    const colRef = collection(
+      db,
+      "clients",
+      userId,
+      "booths",
+      boothId,
+      "Configs"
+    );
+    const snapshot = await getDocs(colRef);
 
-  deleteOne: async <TData extends BaseRecord = BaseRecord>(): Promise<{
-    data: TData;
-  }> => ({
-    data: {} as TData,
-  }),
+    const data = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as TData[];
 
-  create: async <TData extends BaseRecord = BaseRecord>(): Promise<{
-    data: TData;
-  }> => ({
-    data: {} as TData,
-  }),
+    return {
+      data,
+      total: data.length,
+    };
+  },
 
-  getApiUrl: () => "",
+  deleteOne: async <
+    TData extends BaseRecord = BaseRecord,
+    TVariables = Record<string, never> // Kept as Record<string, never> since no variables are used
+  >(
+    params: DeleteOneParams<TVariables>
+  ): Promise<DeleteOneResponse<TData>> => {
+    const auth = getAuth();
+    const userId = auth.currentUser?.uid;
+    if (!userId) {
+      throw new Error("User not authenticated");
+    }
+    const boothId = await getBoothId(userId);
+    const docRef = doc(
+      db,
+      "clients",
+      userId,
+      "booths",
+      boothId,
+      "Configs",
+      params.id as string
+    );
+    await deleteDoc(docRef);
 
-  custom: async <TData extends BaseRecord = BaseRecord>(
-    _params?: CustomParams
-  ) => ({
-    data: {} as TData,
-  }),
+    return {
+      data: { id: params.id } as TData,
+    };
+  },
+
+  create: async <
+    TData extends BaseRecord = BaseRecord,
+    TVariables extends Record<string, any> = Record<string, any> // Updated to allow any properties
+  >(
+    params: CreateParams<TVariables>
+  ): Promise<CreateResponse<TData>> => {
+    const auth = getAuth();
+    const userId = auth.currentUser?.uid;
+    if (!userId) {
+      throw new Error("User not authenticated");
+    }
+
+    const boothId = await getBoothId(userId);
+    const { id, ...rest } = params.variables as TVariables & { id: string };
+    const docRef = doc(
+      db,
+      "clients",
+      userId,
+      "booths",
+      boothId,
+      "Configs",
+      id as string
+    );
+    await setDoc(docRef, rest);
+
+    return {
+      data: {
+        id,
+        ...rest,
+      } as unknown as TData,
+    };
+  },
 };

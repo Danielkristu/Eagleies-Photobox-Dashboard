@@ -52,8 +52,11 @@ export const appConfigDataProvider = {
     };
   },
 
-  create: async <TData extends BaseRecord = BaseRecord>(
-    params: CreateParams
+  create: async <
+    TData extends BaseRecord = BaseRecord,
+    TVariables extends Record<string, unknown> = Record<string, unknown>
+  >(
+    params: CreateParams<TVariables>
   ): Promise<CreateResponse<TData>> => {
     return { data: {} as TData };
   },

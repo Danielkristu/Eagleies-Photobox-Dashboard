@@ -11,6 +11,7 @@ import {
   CreateParams,
   UpdateParams,
   DeleteOneParams,
+  DeleteOneResponse,
 } from "@refinedev/core";
 import {
   doc,
@@ -21,13 +22,53 @@ import {
   deleteDoc,
   collection,
 } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import { db } from "../firebase";
+
+// Helper function to get boothId from Firestore
+const getBoothId = async (userId: string): Promise<string> => {
+  const userRef = doc(db, "users", userId);
+  const userSnap = await getDoc(userRef);
+
+  if (!userSnap.exists()) {
+    throw new Error("User not found");
+  }
+
+  const userData = userSnap.data();
+  if (userData.role !== "client") {
+    throw new Error("User is not a client");
+  }
+
+  const clientId = userId;
+  const boothsRef = collection(db, `Clients/${clientId}/booths`);
+  const boothsSnapshot = await getDocs(boothsRef);
+
+  if (boothsSnapshot.empty) {
+    throw new Error("No booths found for this client");
+  }
+
+  const boothDoc = boothsSnapshot.docs[0];
+  return boothDoc.id;
+};
 
 export const voucherDataProvider = {
   getList: async <TData extends BaseRecord = BaseRecord>(
     params: GetListParams
   ): Promise<GetListResponse<TData>> => {
-    const colRef = collection(db, "Photobox", "someBoothId", "Vouchers");
+    const auth = getAuth();
+    const userId = auth.currentUser?.uid;
+    if (!userId) {
+      throw new Error("User not authenticated");
+    }
+    const boothId = await getBoothId(userId);
+    const colRef = collection(
+      db,
+      "Clients",
+      userId,
+      "booths",
+      boothId,
+      "vouchers"
+    );
     const snapshot = await getDocs(colRef);
 
     const data = snapshot.docs.map((doc) => ({
@@ -44,11 +85,19 @@ export const voucherDataProvider = {
   getOne: async <TData extends BaseRecord = BaseRecord>(
     params: GetOneParams
   ): Promise<GetOneResponse<TData>> => {
+    const auth = getAuth();
+    const userId = auth.currentUser?.uid;
+    if (!userId) {
+      throw new Error("User not authenticated");
+    }
+    const boothId = await getBoothId(userId);
     const docRef = doc(
       db,
-      "Photobox",
-      "someBoothId",
-      "Vouchers",
+      "Clients",
+      userId,
+      "booths",
+      boothId,
+      "vouchers",
       params.id as string
     );
     const snapshot = await getDoc(docRef);
@@ -68,16 +117,29 @@ export const voucherDataProvider = {
   >(
     params: CreateParams<TVariables>
   ): Promise<CreateResponse<TData>> => {
+    const auth = getAuth();
+    const userId = auth.currentUser?.uid;
+    if (!userId) {
+      throw new Error("User not authenticated");
+    }
+    const boothId = await getBoothId(userId);
     const { id, ...rest } = params.variables as TVariables & { id: string };
-
-    const docRef = doc(db, "Photobox", "someBoothId", "Vouchers", id);
+    const docRef = doc(
+      db,
+      "Clients",
+      userId,
+      "booths",
+      boothId,
+      "vouchers",
+      id
+    );
     await setDoc(docRef, rest);
 
     return {
       data: {
         id,
         ...rest,
-      } as unknown as TData,
+      } as TData,
     };
   },
 
@@ -87,11 +149,19 @@ export const voucherDataProvider = {
   >(
     params: UpdateParams<TVariables>
   ): Promise<UpdateResponse<TData>> => {
+    const auth = getAuth();
+    const userId = auth.currentUser?.uid;
+    if (!userId) {
+      throw new Error("User not authenticated");
+    }
+    const boothId = await getBoothId(userId);
     const docRef = doc(
       db,
-      "Photobox",
-      "someBoothId",
-      "Vouchers",
+      "Clients",
+      userId,
+      "booths",
+      boothId,
+      "vouchers",
       params.id as string
     );
     await updateDoc(docRef, params.variables);
@@ -107,11 +177,19 @@ export const voucherDataProvider = {
   deleteOne: async <TData extends BaseRecord = BaseRecord>(
     params: DeleteOneParams
   ): Promise<DeleteOneResponse<TData>> => {
+    const auth = getAuth();
+    const userId = auth.currentUser?.uid;
+    if (!userId) {
+      throw new Error("User not authenticated");
+    }
+    const boothId = await getBoothId(userId);
     const docRef = doc(
       db,
-      "Photobox",
-      "someBoothId",
-      "Vouchers",
+      "Clients",
+      userId,
+      "booths",
+      boothId,
+      "vouchers",
       params.id as string
     );
     await deleteDoc(docRef);

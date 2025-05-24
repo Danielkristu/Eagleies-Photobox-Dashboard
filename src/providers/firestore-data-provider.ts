@@ -75,7 +75,6 @@ export const firestoreDataProvider = {
       data: { id, ...dataToSave } as unknown as TData,
     };
   },
-
   update: async <
     TData extends BaseRecord = BaseRecord,
     TVariables extends Record<string, unknown> = Record<string, unknown>
