@@ -1,37 +1,33 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   BaseRecord,
-  GetListParams,
   GetListResponse,
-  GetOneParams,
   GetOneResponse,
-  CreateParams,
   CreateResponse,
-  UpdateParams,
   UpdateResponse,
-  DeleteOneParams,
   DeleteOneResponse,
+  GetListParams,
+  GetOneParams,
+  CreateParams,
+  UpdateParams,
+  DeleteOneParams,
 } from "@refinedev/core";
-
 import {
-  collection,
   doc,
+  setDoc,
   getDocs,
   getDoc,
-  setDoc,
   updateDoc,
   deleteDoc,
+  collection,
 } from "firebase/firestore";
 import { db } from "../firebase";
-import { getBoothId } from "../hooks/useBoothId";
 
 export const voucherDataProvider = {
   getList: async <TData extends BaseRecord = BaseRecord>(
     params: GetListParams
   ): Promise<GetListResponse<TData>> => {
-    const boothId = getBoothId();
-    const colRef = collection(db, "Photobox", boothId!, "Vouchers");
+    const colRef = collection(db, "Photobox", "someBoothId", "Vouchers");
     const snapshot = await getDocs(colRef);
 
     const data = snapshot.docs.map((doc) => ({
@@ -39,23 +35,27 @@ export const voucherDataProvider = {
       ...doc.data(),
     })) as TData[];
 
-    return { data, total: data.length };
+    return {
+      data,
+      total: data.length,
+    };
   },
 
   getOne: async <TData extends BaseRecord = BaseRecord>(
     params: GetOneParams
   ): Promise<GetOneResponse<TData>> => {
-    const boothId = getBoothId();
     const docRef = doc(
       db,
       "Photobox",
-      boothId!,
+      "someBoothId",
       "Vouchers",
       params.id as string
     );
     const snapshot = await getDoc(docRef);
 
-    if (!snapshot.exists()) throw new Error("Document not found");
+    if (!snapshot.exists()) {
+      throw new Error("Document not found");
+    }
 
     return {
       data: { id: snapshot.id, ...(snapshot.data() as object) } as TData,
@@ -68,13 +68,17 @@ export const voucherDataProvider = {
   >(
     params: CreateParams<TVariables>
   ): Promise<CreateResponse<TData>> => {
-    const boothId = getBoothId();
     const { id, ...rest } = params.variables as TVariables & { id: string };
 
-    const docRef = doc(db, "Photobox", boothId!, "Vouchers", id);
+    const docRef = doc(db, "Photobox", "someBoothId", "Vouchers", id);
     await setDoc(docRef, rest);
 
-    return { data: { id, ...rest } as unknown as TData };
+    return {
+      data: {
+        id,
+        ...rest,
+      } as unknown as TData,
+    };
   },
 
   update: async <
@@ -83,35 +87,38 @@ export const voucherDataProvider = {
   >(
     params: UpdateParams<TVariables>
   ): Promise<UpdateResponse<TData>> => {
-    const boothId = getBoothId();
     const docRef = doc(
       db,
       "Photobox",
-      boothId!,
+      "someBoothId",
       "Vouchers",
       params.id as string
     );
     await updateDoc(docRef, params.variables);
 
     return {
-      data: { id: params.id, ...(params.variables as object) } as TData,
+      data: {
+        id: params.id,
+        ...(params.variables as object),
+      } as TData,
     };
   },
 
   deleteOne: async <TData extends BaseRecord = BaseRecord>(
     params: DeleteOneParams
   ): Promise<DeleteOneResponse<TData>> => {
-    const boothId = getBoothId();
     const docRef = doc(
       db,
       "Photobox",
-      boothId!,
+      "someBoothId",
       "Vouchers",
       params.id as string
     );
     await deleteDoc(docRef);
 
-    return { data: { id: params.id } as TData };
+    return {
+      data: { id: params.id } as TData,
+    };
   },
 
   getApiUrl: () => "",
