@@ -1,26 +1,40 @@
-// src/providers/firestore-data-provider.ts
+import {
+  BaseRecord,
+  GetListParams,
+  GetListResponse,
+  GetOneParams,
+  GetOneResponse,
+  CreateParams,
+  CreateResponse,
+  UpdateParams,
+  UpdateResponse,
+  DeleteOneParams,
+  DeleteOneResponse,
+} from "@refinedev/core";
 
 import {
+  doc,
   collection,
   getDocs,
   getDoc,
-  doc,
-  addDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
-  query,
-  where,
 } from "firebase/firestore";
-import { DataProvider } from "@refinedev/core";
 import { db } from "../firebase";
 
-export const firestoreDataProvider: DataProvider = {
-  getList: async ({ resource }) => {
-    const snapshot = await getDocs(collection(db, resource));
+export const firestoreDataProvider = {
+  getList: async <TData extends BaseRecord = BaseRecord>(
+    params: GetListParams
+  ): Promise<GetListResponse<TData>> => {
+    // contoh query: sesuaikan dengan kebutuhan
+    const colRef = collection(db, params.resource);
+    const snapshot = await getDocs(colRef);
+
     const data = snapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
-    }));
+    })) as TData[];
 
     return {
       data,
@@ -28,58 +42,73 @@ export const firestoreDataProvider: DataProvider = {
     };
   },
 
-  getOne: async ({ id }) => {
-    const docRef = doc(db, "Photobox", id as string);
+  getOne: async <TData extends BaseRecord = BaseRecord>(
+    params: GetOneParams
+  ): Promise<GetOneResponse<TData>> => {
+    const docRef = doc(db, params.resource, params.id as string);
     const snapshot = await getDoc(docRef);
 
     if (!snapshot.exists()) {
       throw new Error("Document not found");
     }
 
-    const data = snapshot.data();
-
     return {
-      data: {
-        id: snapshot.id,
-        ...data, // ⬅️ Harus mengandung semua field (price, callback_url, dll)
-      },
+      data: { id: snapshot.id, ...(snapshot.data() as object) } as TData,
     };
   },
 
-  create: async ({ resource, variables }) => {
-    const docRef = await addDoc(collection(db, resource), variables);
+  create: async <
+    TData extends BaseRecord = BaseRecord,
+    TVariables extends Record<string, unknown> = Record<string, unknown>
+  >(
+    params: CreateParams<TVariables>
+  ): Promise<CreateResponse<TData>> => {
+    const id =
+      (params.variables as { id?: string }).id ??
+      doc(collection(db, params.resource)).id;
+    const docRef = doc(db, params.resource, id);
+
+    const dataToSave = { ...params.variables };
+    await setDoc(docRef, dataToSave);
+
     return {
-      data: {
-        id: docRef.id,
-        ...variables,
-      },
+      data: { id, ...dataToSave } as unknown as TData,
     };
   },
 
-  update: async ({ resource, id, variables }) => {
-    const docRef = doc(db, resource, id as string);
-    await updateDoc(docRef, variables);
+  update: async <
+    TData extends BaseRecord = BaseRecord,
+    TVariables extends Record<string, unknown> = Record<string, unknown>
+  >(
+    params: UpdateParams<TVariables>
+  ): Promise<UpdateResponse<TData>> => {
+    const docRef = doc(db, params.resource, params.id as string);
+    await updateDoc(docRef, params.variables);
+
     return {
       data: {
-        id,
-        ...variables,
-      },
+        id: params.id,
+        ...(params.variables as object),
+      } as unknown as TData,
     };
   },
 
-  deleteOne: async ({ resource, id }) => {
-    const docRef = doc(db, resource, id as string);
+  deleteOne: async <
+    TData extends BaseRecord = BaseRecord,
+    TVariables extends { [key: string]: never } = { [key: string]: never }
+  >(
+    params: DeleteOneParams<TVariables>
+  ): Promise<DeleteOneResponse<TData>> => {
+    const docRef = doc(db, params.resource, params.id as string);
     await deleteDoc(docRef);
+
     return {
-      data: {
-        id,
-      },
+      data: { id: params.id } as TData,
     };
   },
 
   getApiUrl: () => "",
-
-  custom: async () => {
-    return { data: [] };
-  },
+  custom: async <TData extends BaseRecord = BaseRecord>() => ({
+    data: [] as TData[],
+  }),
 };

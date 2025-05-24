@@ -1,10 +1,20 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from "react";
 import { Card, Col, Row, Typography, notification, Empty, Spin } from "antd";
-import { fetchTotalRevenueFromXendit, fetchBoothsData } from "../utils/xendit"; // Import fungsi Xendit
-import { useGetIdentity } from "@refinedev/core"; // Untuk mendapatkan info user
-import { DollarOutlined, AppstoreAddOutlined, TeamOutlined } from "@ant-design/icons";
+import { fetchTotalRevenueFromXendit, fetchBoothsData } from "../utils/xendit";
+import { useGetIdentity } from "@refinedev/core";
+import {
+  DollarOutlined,
+  AppstoreAddOutlined,
+  TeamOutlined,
+} from "@ant-design/icons";
 
 const { Title } = Typography;
+
+interface UserIdentity {
+  id: string;
+  // tambahkan properti lain jika ada
+}
 
 export default function HomePage() {
   const [booths, setBooths] = useState<any[]>([]);
@@ -12,55 +22,42 @@ export default function HomePage() {
   const [loadingBooths, setLoadingBooths] = useState<boolean>(true);
   const [loadingRevenue, setLoadingRevenue] = useState<boolean>(true);
 
-  const { data: userIdentity } = useGetIdentity();  // Ambil data user yang login
+  const { data: userIdentity } = useGetIdentity<UserIdentity>();
   const userId = userIdentity?.id;
 
-useEffect(() => {
-  if (!userId) return;
+  useEffect(() => {
+    if (!userId) return;
 
-  fetchBoothsData(userId)
-    .then((booths) => {
-      setBooths(booths);
-    })
-    .catch((error) => {
-      notification.error({
-        message: "Error fetching booths",
-        description: "There was an issue fetching your booths.",
+    fetchBoothsData(userId)
+      .then((booths) => {
+        setBooths(booths);
+        setLoadingBooths(false);
+      })
+      .catch(() => {
+        notification.error({
+          message: "Error fetching booths",
+          description: "There was an issue fetching your booths.",
+        });
+        setLoadingBooths(false);
       });
-    });
-}, [userId]);
+  }, [userId]);
 
-  // Ambil daftar booth dengan error handling dan loading spesifik
-  const fetchBooths = async (userId: string) => {
-    setLoadingBooths(true);
-    try {
-      const boothsData = await fetchBoothsData(userId);  // Pastikan fungsi ini sudah benar
-      setBooths(boothsData);
-    } catch (error) {
-      notification.error({
-        message: "Error fetching booths",
-        description: "There was an issue fetching your booths.",
-      });
-    } finally {
-      setLoadingBooths(false);
-    }
-  };
+  useEffect(() => {
+    if (!userId) return;
 
-  // Ambil total revenue dengan loading dan error handling
-  const fetchTotalRevenueData = async (userId: string) => {
-    setLoadingRevenue(true);
-    try {
-      const revenue = await fetchTotalRevenueFromXendit(userId);
-      setTotalRevenue(revenue);
-    } catch (error) {
-      notification.error({
-        message: "Error fetching revenue",
-        description: "There was an issue fetching the total revenue.",
+    fetchTotalRevenueFromXendit(userId)
+      .then((revenue) => {
+        setTotalRevenue(revenue);
+        setLoadingRevenue(false);
+      })
+      .catch(() => {
+        notification.error({
+          message: "Error fetching revenue",
+          description: "There was an issue fetching the total revenue.",
+        });
+        setLoadingRevenue(false);
       });
-    } finally {
-      setLoadingRevenue(false);
-    }
-  };
+  }, [userId]);
 
   const formatRupiah = (amount: number) =>
     new Intl.NumberFormat("id-ID", {
@@ -74,7 +71,6 @@ useEffect(() => {
       <Title level={2}>Dashboard</Title>
 
       <Row gutter={24}>
-        {/* Total Pendapatan */}
         <Col xs={24} sm={12} md={8}>
           <Card
             title="Total Pendapatan"
@@ -87,7 +83,6 @@ useEffect(() => {
           </Card>
         </Col>
 
-        {/* Jumlah Booth */}
         <Col xs={24} sm={12} md={8}>
           <Card
             title="Jumlah Booth"
@@ -100,7 +95,6 @@ useEffect(() => {
           </Card>
         </Col>
 
-        {/* Your Booths */}
         <Col xs={24} md={8}>
           <Card
             title="Your Booths"
@@ -121,7 +115,7 @@ useEffect(() => {
                   key={booth.id}
                   style={{ width: "100%", marginBottom: 10, cursor: "pointer" }}
                   onClick={() => {
-                    // misal mau navigasi ke detail booth
+                    // contoh navigasi ke detail booth
                     // navigate(`/booth/${booth.id}`);
                   }}
                 >

@@ -1,57 +1,74 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   DataProvider,
+  GetOneParams,
   GetOneResponse,
+  UpdateParams,
   UpdateResponse,
   BaseRecord,
+  CustomParams,
 } from "@refinedev/core";
-import {
-  doc,
-  getDoc,
-  updateDoc,
-  DocumentData,
-  setDoc,
-} from "firebase/firestore";
+import { doc, getDoc, setDoc, DocumentData } from "firebase/firestore";
 import { db } from "../firebase";
 
 export const photoboxDataProvider: DataProvider = {
-  // Ambil dokumen Photobox/{boothId}
-  getOne: async ({ id }): Promise<GetOneResponse<BaseRecord>> => {
-    const docRef = doc(db, "Photobox", id as string);
+  getOne: async <TData extends BaseRecord = BaseRecord>(
+    params: GetOneParams
+  ): Promise<GetOneResponse<TData>> => {
+    const docRef = doc(db, "Photobox", params.id as string);
     const snapshot = await getDoc(docRef);
 
     if (!snapshot.exists()) {
       throw new Error("Document not found");
     }
 
-    const data = snapshot.data() as DocumentData;
-
     return {
-      data: {
-        id: snapshot.id,
-        ...data,
-      },
+      data: { id: snapshot.id, ...(snapshot.data() as DocumentData) } as TData,
     };
   },
 
-  // Update Photobox/{boothId}
-update: async ({ id, variables }) => {
-  const docRef = doc(db, "Photobox", id as string);
-  await setDoc(docRef, variables, { merge: true });
+  update: async <
+    TData extends BaseRecord = BaseRecord,
+    TVariables = NonNullable<unknown>
+  >(
+    params: UpdateParams<TVariables>
+  ): Promise<UpdateResponse<TData>> => {
+    const docRef = doc(db, "Photobox", params.id as string);
+    await setDoc(docRef, params.variables as object, { merge: true });
 
-  return {
-    data: {
-      id,
-      ...variables,
-    },
-  };
-},
+    return {
+      data: {
+        id: params.id,
+        ...(params.variables as object),
+      } as unknown as TData,
+    };
+  },
 
+  getList: async <TData extends BaseRecord = BaseRecord>(): Promise<{
+    data: TData[];
+    total: number;
+  }> => ({
+    data: [] as TData[],
+    total: 0,
+  }),
 
+  deleteOne: async <TData extends BaseRecord = BaseRecord>(): Promise<{
+    data: TData;
+  }> => ({
+    data: {} as TData,
+  }),
 
-  // Optional stubs
-  getList: async () => ({ data: [], total: 0 }),
-  deleteOne: async () => ({ data: {} }),
-  create: async () => ({ data: {} }),
+  create: async <TData extends BaseRecord = BaseRecord>(): Promise<{
+    data: TData;
+  }> => ({
+    data: {} as TData,
+  }),
+
   getApiUrl: () => "",
-  custom: async () => ({ data: [] }),
+
+  custom: async <TData extends BaseRecord = BaseRecord>(
+    _params?: CustomParams
+  ) => ({
+    data: {} as TData,
+  }),
 };

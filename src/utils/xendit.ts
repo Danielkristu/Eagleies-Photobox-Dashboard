@@ -1,22 +1,23 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase"; // Pastikan kamu sudah mengkonfigurasi Firestore
 import axios from "axios";
-import { notification } from "antd";  // untuk menampilkan error jika ada masalah
+import { notification } from "antd"; // untuk menampilkan error jika ada masalah
 import { collection, getDocs } from "firebase/firestore";
 // Fungsi untuk mengambil Xendit API Key dari Firestore
 export async function getXenditApiKey(userId: string): Promise<string | null> {
-  console.log("Fetching Xendit API Key for userId:", userId);  // Log userId
+  console.log("Fetching Xendit API Key for userId:", userId); // Log userId
 
   try {
-    const clientRef = doc(db, "Clients", userId);  // Path harus sesuai dengan yang ada di Firestore
+    const clientRef = doc(db, "Clients", userId); // Path harus sesuai dengan yang ada di Firestore
     const clientSnap = await getDoc(clientRef);
 
     if (clientSnap.exists()) {
       const clientData = clientSnap.data();
-      console.log("Client Data Found:", clientData);  // Log data client yang ditemukan
+      console.log("Client Data Found:", clientData); // Log data client yang ditemukan
       return clientData.xendit_api_key || null;
     } else {
-      console.error("Client not found for userId:", userId);  // Log jika client tidak ditemukan
+      console.error("Client not found for userId:", userId); // Log jika client tidak ditemukan
       return null;
     }
   } catch (error) {
@@ -31,7 +32,7 @@ export async function fetchBoothsData(userId: string) {
     const boothsCol = collection(db, "clients", userId, "booths");
     const boothsSnapshot = await getDocs(boothsCol);
 
-    const boothsList = boothsSnapshot.docs.map(doc => ({
+    const boothsList = boothsSnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
     }));
@@ -63,23 +64,21 @@ export async function fetchTotalRevenueFromXendit(userId: string) {
         Authorization: `Basic ${btoa(xenditApiKey + ":")}`,
       },
     });
-    
+
     console.log("Response from Xendit:", response.data);
 
     const invoices = response.data || [];
 
-
     let totalRevenue = 0;
 
-invoices.forEach((invoice: any) => {
-  if (invoice.status === "PAID") {  // Hitung hanya yang sudah dibayar
-    totalRevenue += invoice.amount;  // Tambahkan jumlah invoice
-  }
-});
-
+    invoices.forEach((invoice: any) => {
+      if (invoice.status === "PAID") {
+        // Hitung hanya yang sudah dibayar
+        totalRevenue += invoice.amount; // Tambahkan jumlah invoice
+      }
+    });
 
     return totalRevenue;
-
   } catch (error) {
     console.error("Error fetching invoices from Xendit", error);
     notification.error({
