@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import {
@@ -87,7 +88,7 @@ export const photoboxDataProvider: DataProvider = {
 
   update: async <
     TData extends BaseRecord = BaseRecord,
-    TVariables extends Record<string, any> = Record<string, any> // Updated to allow any properties
+    TVariables = {} // Updated to match DataProvider interface
   >(
     params: UpdateParams<TVariables>
   ): Promise<UpdateResponse<TData>> => {
@@ -107,7 +108,7 @@ export const photoboxDataProvider: DataProvider = {
       params.id as string
     );
 
-    await updateDoc(docRef, params.variables);
+    await updateDoc(docRef, params.variables as any); // Type assertion to satisfy Firestore
 
     return {
       data: {
@@ -149,7 +150,7 @@ export const photoboxDataProvider: DataProvider = {
 
   deleteOne: async <
     TData extends BaseRecord = BaseRecord,
-    TVariables = Record<string, never> // Kept as Record<string, never> since no variables are used
+    TVariables = Record<string, never>
   >(
     params: DeleteOneParams<TVariables>
   ): Promise<DeleteOneResponse<TData>> => {
@@ -177,7 +178,7 @@ export const photoboxDataProvider: DataProvider = {
 
   create: async <
     TData extends BaseRecord = BaseRecord,
-    TVariables extends Record<string, any> = Record<string, any> // Updated to allow any properties
+    TVariables = {} // Updated to match DataProvider interface
   >(
     params: CreateParams<TVariables>
   ): Promise<CreateResponse<TData>> => {
@@ -198,7 +199,7 @@ export const photoboxDataProvider: DataProvider = {
       "Configs",
       id as string
     );
-    await setDoc(docRef, rest);
+    await setDoc(docRef, rest as any); // Type assertion to satisfy Firestore
 
     return {
       data: {
