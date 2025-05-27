@@ -24,7 +24,7 @@ import { getAuth } from "firebase/auth";
 import { db } from "../firebase";
 import { getBoothId } from "../hooks/useBoothId";
 
-export const voucherDataProvider = {
+export const backgroundDataProvider = {
   getList: async <TData extends BaseRecord = BaseRecord>(
     params: GetListParams
   ): Promise<GetListResponse<TData>> => {
@@ -39,14 +39,7 @@ export const voucherDataProvider = {
       throw new Error("Booth ID not found");
     }
 
-    const colRef = collection(
-      db,
-      "Clients",
-      userId,
-      "booths",
-      boothId,
-      "vouchers"
-    );
+    const colRef = collection(db, "Clients", userId, "booths", boothId, "backgrounds");
     const snapshot = await getDocs(colRef);
 
     const data = snapshot.docs.map((doc) => ({
@@ -74,19 +67,11 @@ export const voucherDataProvider = {
       throw new Error("Booth ID not found");
     }
 
-    const docRef = doc(
-      db,
-      "Clients",
-      userId,
-      "booths",
-      boothId,
-      "vouchers",
-      params.id as string
-    );
+    const docRef = doc(db, "Clients", userId, "booths", boothId, "backgrounds", params.id as string);
     const snapshot = await getDoc(docRef);
 
     if (!snapshot.exists()) {
-      throw new Error("Voucher not found");
+      throw new Error("Background not found");
     }
 
     return {
@@ -94,7 +79,10 @@ export const voucherDataProvider = {
     };
   },
 
-  create: async <TData extends BaseRecord = BaseRecord, TVariables = {}>(
+  create: async <
+    TData extends BaseRecord = BaseRecord,
+    TVariables = {}
+  >(
     params: CreateParams<TVariables>
   ): Promise<CreateResponse<TData>> => {
     const auth = getAuth();
@@ -109,15 +97,7 @@ export const voucherDataProvider = {
     }
 
     const { id, ...rest } = params.variables as TVariables & { id: string };
-    const docRef = doc(
-      db,
-      "Clients",
-      userId,
-      "booths",
-      boothId,
-      "vouchers",
-      id as string
-    );
+    const docRef = doc(db, "Clients", userId, "booths", boothId, "backgrounds", id as string);
     await setDoc(docRef, rest as any);
 
     return {
@@ -128,7 +108,10 @@ export const voucherDataProvider = {
     };
   },
 
-  update: async <TData extends BaseRecord = BaseRecord, TVariables = {}>(
+  update: async <
+    TData extends BaseRecord = BaseRecord,
+    TVariables = {}
+  >(
     params: UpdateParams<TVariables>
   ): Promise<UpdateResponse<TData>> => {
     const auth = getAuth();
@@ -142,15 +125,7 @@ export const voucherDataProvider = {
       throw new Error("Booth ID not found");
     }
 
-    const docRef = doc(
-      db,
-      "Clients",
-      userId,
-      "booths",
-      boothId,
-      "vouchers",
-      params.id as string
-    );
+    const docRef = doc(db, "Clients", userId, "booths", boothId, "backgrounds", params.id as string);
     await updateDoc(docRef, params.variables as any);
 
     return {
@@ -175,15 +150,7 @@ export const voucherDataProvider = {
       throw new Error("Booth ID not found");
     }
 
-    const docRef = doc(
-      db,
-      "Clients",
-      userId,
-      "booths",
-      boothId,
-      "vouchers",
-      params.id as string
-    );
+    const docRef = doc(db, "Clients", userId, "booths", boothId, "backgrounds", params.id as string);
     await deleteDoc(docRef);
 
     return {

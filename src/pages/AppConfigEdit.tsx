@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect } from "react";
 import { Form, Input, InputNumber, Button, Spin, message } from "antd";
 import { useForm } from "antd/es/form/Form";
