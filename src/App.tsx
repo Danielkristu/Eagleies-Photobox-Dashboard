@@ -1,7 +1,7 @@
-import React from "react";
 import { Refine, WelcomePage } from "@refinedev/core";
 import { DevtoolsPanel, DevtoolsProvider } from "@refinedev/devtools";
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
+import { voucherDataProvider } from "./providers/voucher-data-provider";
 import { useNotificationProvider, ThemedLayoutV2 } from "@refinedev/antd";
 import "@refinedev/antd/dist/reset.css";
 import { VoucherCreate } from "./pages/VoucherCreate";
@@ -21,7 +21,6 @@ import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 
 import { ColorModeContextProvider } from "./contexts/color-mode";
 import { VoucherList } from "./pages/VoucherList";
-import { voucherDataProvider } from "./providers/voucher-data-provider";
 import { photoboxDataProvider } from "./providers/photobox-data-provider";
 
 function App() {
@@ -67,9 +66,14 @@ function App() {
                   }}
                 >
                   <Routes>
+                    {/* Login route */}
                     <Route path="/login" element={<Login />} />
-                    <Route path="/" element={<HomePage />} />
+                    {/* Home route */}
+                    <Route path="/" element={<HomePage />} />{" "}
+                    {/* Ganti / ke HomePage */}
+                    {/* Optionally, keep the WelcomePage at another path */}
                     <Route path="/welcome" element={<WelcomePage />} />
+                    {/* Protected route for the rest */}
                     <Route
                       element={
                         <ThemedLayoutV2>

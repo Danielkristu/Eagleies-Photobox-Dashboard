@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { AuthBindings } from "@refinedev/core";
 import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { auth, db } from "../firebase";
@@ -10,7 +9,7 @@ async function syncUserToFirestore(user: any) {
     const userSnap = await getDoc(userRef);
 
     if (!userSnap.exists()) {
-      const role = "client";
+      const role = "client"; // atur sesuai logika kamu
 
       await setDoc(userRef, {
         email: user.email,
@@ -32,7 +31,7 @@ async function syncUserToFirestore(user: any) {
     }
   } catch (err) {
     console.error("syncUserToFirestore error:", err);
-    return "seller";
+    return "seller"; // fallback role
   }
 }
 
@@ -64,9 +63,7 @@ export const authProvider: AuthBindings = {
   },
   check: async () => {
     const user = localStorage.getItem("user");
-    return user
-      ? { authenticated: true }
-      : { authenticated: false, redirectTo: "/login" };
+    return user ? { authenticated: true } : { authenticated: false, redirectTo: "/login" };
   },
   getPermissions: async () => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -75,9 +72,5 @@ export const authProvider: AuthBindings = {
   getIdentity: async () => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     return user?.uid ? { id: user.uid } : null;
-  },
-  onError: (error) => {
-    console.error(error);
-    throw error;
   },
 };

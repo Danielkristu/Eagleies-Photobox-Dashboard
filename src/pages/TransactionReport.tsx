@@ -1,16 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState, useCallback } from "react";
-import {
-  Table,
-  DatePicker,
-  Select,
-  Typography,
-  Row,
-  Col,
-  Card,
-  Spin,
-  message,
-} from "antd";
+import { useEffect, useState } from "react";
+import { Table, DatePicker, Select, Typography, Row, Col, Card, Spin, message } from "antd";
 import { Bar } from "react-chartjs-2";
 import dayjs from "dayjs";
 import { fetchXenditTransactions } from "../services/xenditService";
@@ -26,14 +15,7 @@ import {
 } from "chart.js";
 
 // Registrasi elemen ChartJS yang diperlukan
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend
-);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
@@ -42,67 +24,62 @@ export const TransactionReport = () => {
   const boothId = getBoothId();
   const [data, setData] = useState<any[]>([]);
   const [status, setStatus] = useState<string | undefined>(undefined);
-  const [range, setRange] = useState<
-    [dayjs.Dayjs | null, dayjs.Dayjs | null] | null
-  >(null);
-
+  const [range, setRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null);
   const [loading, setLoading] = useState(false);
 
   // Fungsi fetch data dari Xendit
-  const fetchData = useCallback(async () => {
-    if (!boothId) return;
-
-    setLoading(true);
-
-    try {
-      // Untuk filters:
-      const filters: Record<string, string> = {};
-      if (status) filters.statuses = status;
-      if (range && range[0] !== null && range[1] !== null) {
-        filters.created_after = range[0].startOf("day").toISOString();
-        filters.created_before = range[1].endOf("day").toISOString();
-      }
-
-      const txs = await fetchXenditTransactions(boothId, filters);
-
-      if (!Array.isArray(txs)) {
-        console.error("❌ Data transaksi bukan array:", txs);
-        setData([]);
-        setLoading(false);
-        return;
-      }
-
-      const cleanData = txs.map((tx) => ({
-        id: tx.id,
-        amount: tx.amount,
-        created: tx.created,
-        status: tx.status,
-      }));
-
-      setData(cleanData);
-    } catch (error) {
-      console.error("❌ Error fetch data:", error);
-      message.error("Gagal mengambil data transaksi Xendit.");
-    } finally {
-      setLoading(false);
+  const fetchData = async () => {
+  if (!boothId) return;
+  setLoading(true);
+  try {
+    const filters: Record<string, string> = {};
+    if (status) filters.statuses = status;
+    if (range) {
+      filters.created_after = range[0].startOf("day").toISOString();
+      filters.created_before = range[1].endOf("day").toISOString();
     }
-  }, [boothId, status, range]);
+const txs = await fetchXenditTransactions(boothId, filters);
+
+if (!Array.isArray(txs)) {
+  console.error("❌ Data transaksi bukan array:", txs);
+  setData([]);
+  setLoading(false);
+  return;
+}
+
+// Bersihkan data supaya sesuai properti yang kita butuhkan
+const cleanData = txs.map(tx => ({
+  id: tx.id,
+  amount: tx.amount,
+  created: tx.created,
+  status: tx.status,
+}));
+
+console.log("✅ Data bersih siap UI:", cleanData);
+setData(cleanData);
+
+
+  } catch (error) {
+    console.error("❌ Error fetch data:", error);
+    message.error("Gagal mengambil data transaksi Xendit.");
+  }
+  setLoading(false);
+};
+
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+  }, [status, range, boothId]);
 
   // Hitung data untuk grafik
-  const grouped = data.reduce<Record<string, { count: number; total: number }>>(
-    (acc, tx) => {
-      const date = tx.created ? tx.created.substring(0, 10) : "Unknown";
-      if (!acc[date]) acc[date] = { count: 0, total: 0 };
-      acc[date].count++;
-      acc[date].total += tx.amount ?? 0;
-      return acc;
-    },
-    {}
-  );
+  const grouped = data.reduce<Record<string, { count: number; total: number }>>((acc, tx) => {
+  const date = tx.created?.substring(0, 10) || "Unknown";
+  if (!acc[date]) acc[date] = { count: 0, total: 0 };
+  acc[date].count++;
+  acc[date].total += tx.amount ?? 0;
+  return acc;
+}, {});
+
 
   const sortedDates = Object.keys(grouped).sort();
   const chartData = {
@@ -122,14 +99,12 @@ export const TransactionReport = () => {
       },
     ],
   };
-  console.log("🔎 Data yang di-render di tabel dan grafik:", data);
-  console.log("🔎 Data untuk grafik:", chartData);
+console.log("🔎 Data yang di-render di tabel dan grafik:", data);
+console.log("🔎 Data untuk grafik:", chartData);
 
   return (
     <>
-      <Typography.Title level={3}>
-        📡 Laporan Transaksi dari Xendit
-      </Typography.Title>
+      <Typography.Title level={3}>📡 Laporan Transaksi dari Xendit</Typography.Title>
 
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col>
@@ -192,9 +167,7 @@ export const TransactionReport = () => {
                 callbacks: {
                   label: function (context) {
                     if (context.dataset.label === "Total Amount (Rp)") {
-                      return `${
-                        context.dataset.label
-                      }: Rp ${context.parsed.y.toLocaleString("id-ID")}`;
+                      return `${context.dataset.label}: Rp ${context.parsed.y.toLocaleString("id-ID")}`;
                     }
                     return `${context.dataset.label}: ${context.parsed.y}`;
                   },

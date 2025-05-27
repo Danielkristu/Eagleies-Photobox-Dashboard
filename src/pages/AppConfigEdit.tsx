@@ -4,47 +4,33 @@ import { useForm } from "antd/es/form/Form";
 import { useOne, useUpdate } from "@refinedev/core";
 import { getBoothId } from "../hooks/useBoothId";
 
-interface FormValues {
-  price: number;
-  xendit_api_key: string;
-  callback_url: string;
-  dslrbooth_api_url?: string;
-  dslrbooth_api_password?: string;
-}
-
 export const AppConfigEdit = () => {
   const boothId = getBoothId();
-
-  // **JANGAN lakukan return di sini, tetap panggil semua hook berikut!**
-
   const [form] = useForm();
 
+  // 🔍 Ambil data dari Firestore
   const { data, isLoading } = useOne({
     resource: "Photobox",
-    id: boothId ?? "", // kasih default supaya hook tidak error
+    id: boothId,
     dataProviderName: "photobox",
-    queryOptions: {
-      enabled: Boolean(boothId), // hook baru aktif kalau boothId ada
-    },
   });
 
+  // 🚀 Untuk update
   const { mutate: update, isLoading: updating } = useUpdate();
 
+  // 🧠 Isi form saat data udah siap
   useEffect(() => {
     if (data?.data) {
       form.setFieldsValue(data.data);
     }
   }, [data, form]);
 
-  // Kalau boothId tidak ada, tampilkan pesan, tapi hooks tetap sudah terpanggil
-  if (!boothId) return <div>Booth ID tidak ditemukan.</div>;
-  if (isLoading) return <Spin tip="Loading..." />;
-
-  const onFinish = (values: FormValues) => {
+  // 📝 Simpan perubahan
+  const onFinish = (values: any) => {
     update(
       {
         resource: "Photobox",
-        id: boothId,
+        id: boothId!,
         values,
         dataProviderName: "photobox",
       },
@@ -54,6 +40,8 @@ export const AppConfigEdit = () => {
       }
     );
   };
+
+  if (isLoading) return <Spin tip="Loading..." />;
 
   return (
     <Form
@@ -67,7 +55,7 @@ export const AppConfigEdit = () => {
         name="price"
         rules={[{ required: true }]}
       >
-        <InputNumber style={{ width: "100%" }} />
+        <InputNumber prefix="Rp" style={{ width: "100%" }} />
       </Form.Item>
 
       <Form.Item
