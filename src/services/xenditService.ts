@@ -1,9 +1,9 @@
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 
-// Ambil API Key dari Firestore berdasarkan userId
-const getXenditApiKey = async (userId: string): Promise<string> => {
-  const ref = doc(db, "Clients", userId);
+// Ambil API Key dari Firestore
+const getXenditApiKey = async (boothId: string): Promise<string> => {
+  const ref = doc(db, "Photobox", boothId);
   const snap = await getDoc(ref);
 
   if (!snap.exists()) throw new Error("Konfigurasi tidak ditemukan");
@@ -17,10 +17,10 @@ const getXenditApiKey = async (userId: string): Promise<string> => {
 };
 
 // Fetch transaksi Xendit real-time
-export const fetchXenditTransactions = async (userId: string, filters = {}) => {
+export const fetchXenditTransactions = async (boothId: string, filters = {}) => {
   const BASE_URL = "https://api.xendit.co/v2/invoices";
   const params = new URLSearchParams(filters).toString();
-  const auth = await getXenditApiKey(userId); // Gunakan userId, bukan boothId
+  const auth = await getXenditApiKey(boothId);
 
   const response = await fetch(`${BASE_URL}?${params}`, {
     headers: {
@@ -41,3 +41,5 @@ export const fetchXenditTransactions = async (userId: string, filters = {}) => {
 
   return result;
 };
+
+

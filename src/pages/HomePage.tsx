@@ -1,119 +1,66 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  Card,
-  Col,
-  Row,
-  Typography,
-  notification,
-  Empty,
-  Spin,
-  Button,
-  Skeleton,
-} from "antd";
-import {
-  DollarOutlined,
-  AppstoreAddOutlined,
-  TeamOutlined,
-  SettingOutlined,
-  GiftOutlined,
-  PictureOutlined,
-} from "@ant-design/icons";
-import { useGetIdentity } from "@refinedev/core";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../firebase";
-import { fetchTotalRevenueFromXendit } from "../utils/xendit";
-import Header from "../components/Header";
+import { Card, Col, Row, Typography, notification, Empty, Spin } from "antd";
+import { fetchTotalRevenueFromXendit, fetchBoothsData } from "../utils/xendit"; // Import fungsi Xendit
+import { useGetIdentity } from "@refinedev/core"; // Untuk mendapatkan info user
+import { DollarOutlined, AppstoreAddOutlined, TeamOutlined } from "@ant-design/icons";
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
-interface Booth {
-  id: string;
-  name: string;
-  settings: Record<string, any>;
-  created_at: { seconds: number; nanoseconds: number };
-}
-
-interface UserIdentity {
-  id: string;
-  email: string;
-  name: string;
-}
-
-const HomePage: React.FC = () => {
-  const navigate = useNavigate();
-  const { data: userIdentity } = useGetIdentity<UserIdentity>();
-  console.log("User identity:", userIdentity);
-  const userId = userIdentity?.id;
-
-  const [booths, setBooths] = useState<Booth[]>([]);
-  const [totalRevenue, setTotalRevenue] = useState<number | null>(null);
+export default function HomePage() {
+  const [booths, setBooths] = useState<any[]>([]);
+  const [totalRevenue, setTotalRevenue] = useState<number>(0);
   const [loadingBooths, setLoadingBooths] = useState<boolean>(true);
   const [loadingRevenue, setLoadingRevenue] = useState<boolean>(true);
-  const [errorBooths, setErrorBooths] = useState<string | null>(null);
-  const [errorRevenue, setErrorRevenue] = useState<string | null>(null); // Fixed: Changed state to useState
-  const [authLoading, setAuthLoading] = useState<boolean>(true);
 
-  const fetchBooths = async (userId: string) => {
-    setLoadingBooths(true);
-    setErrorBooths(null);
-    try {
-      const colRef = collection(db, "Clients", userId, "Booths");
-      console.log("Querying Firestore at path:", colRef.path);
-      const snapshot = await getDocs(colRef);
-      console.log("Booths snapshot:", snapshot.docs);
-      const boothData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        name: doc.data().name || "Unnamed Booth",
-        settings: doc.data().settings || {},
-        created_at: doc.data().created_at || { seconds: 0, nanoseconds: 0 },
-      })) as Booth[];
-      console.log("Parsed booth data:", boothData);
-      setBooths(boothData);
-    } catch (error: any) {
-      console.log("Error fetching booths:", error.message);
-      const errorMessage =
-        error.message || "There was an issue fetching your booths.";
-      setErrorBooths(errorMessage);
+  const { data: userIdentity } = useGetIdentity();  // Ambil data user yang login
+  const userId = userIdentity?.id;
+
+useEffect(() => {
+  if (!userId) return;
+
+  fetchBoothsData(userId)
+    .then((booths) => {
+      setBooths(booths);
+    })
+    .catch((error) => {
       notification.error({
         message: "Error fetching booths",
-        description: errorMessage,
+        description: "There was an issue fetching your booths.",
+      });
+    });
+}, [userId]);
+
+  // Ambil daftar booth dengan error handling dan loading spesifik
+  const fetchBooths = async (userId: string) => {
+    setLoadingBooths(true);
+    try {
+      const boothsData = await fetchBoothsData(userId);  // Pastikan fungsi ini sudah benar
+      setBooths(boothsData);
+    } catch (error) {
+      notification.error({
+        message: "Error fetching booths",
+        description: "There was an issue fetching your booths.",
       });
     } finally {
       setLoadingBooths(false);
     }
   };
 
-  const fetchRevenue = async (userId: string) => {
+  // Ambil total revenue dengan loading dan error handling
+  const fetchTotalRevenueData = async (userId: string) => {
     setLoadingRevenue(true);
-    setErrorRevenue(null);
     try {
       const revenue = await fetchTotalRevenueFromXendit(userId);
       setTotalRevenue(revenue);
-    } catch (error: any) {
-      const errorMessage =
-        error.message || "There was an issue fetching the total revenue.";
-      setErrorRevenue(errorMessage);
+    } catch (error) {
       notification.error({
         message: "Error fetching revenue",
-        description: errorMessage,
+        description: "There was an issue fetching the total revenue.",
       });
     } finally {
       setLoadingRevenue(false);
     }
   };
-
-  useEffect(() => {
-    if (!userIdentity) {
-      console.log("No userId available");
-      setAuthLoading(true);
-      return;
-    }
-    setAuthLoading(false);
-    console.log("Fetching booths and revenue for userId:", userId);
-    fetchBooths(userId);
-    fetchRevenue(userId);
-  }, [userIdentity, userId]);
 
   const formatRupiah = (amount: number) =>
     new Intl.NumberFormat("id-ID", {
@@ -122,210 +69,71 @@ const HomePage: React.FC = () => {
       minimumFractionDigits: 0,
     }).format(amount);
 
-  if (authLoading) {
-    return (
-      <div
-        style={{
-          padding: 24,
-          textAlign: "center",
-          background: "#202223",
-          minHeight: "100vh",
-        }}
-      >
-        <Spin tip="Loading user data..." style={{ color: "#fff" }} />
-      </div>
-    );
-  }
-
   return (
-    <div style={{ padding: 24, background: "#202223", minHeight: "100vh" }}>
-      <Header />
-      <Title level={2} style={{ color: "#fff" }}>
-        Dashboard
-      </Title>
+    <div style={{ padding: 24 }}>
+      <Title level={2}>Dashboard</Title>
 
-      <Row gutter={[24, 24]}>
-        {/* Total Revenue */}
+      <Row gutter={24}>
+        {/* Total Pendapatan */}
         <Col xs={24} sm={12} md={8}>
           <Card
-            title={<span style={{ color: "#fff" }}>Total Pendapatan</span>}
+            title="Total Pendapatan"
             bordered={false}
             loading={loadingRevenue}
-            extra={<DollarOutlined style={{ color: "#fff" }} />}
-            style={{
-              textAlign: "center",
-              background: "#2f2f2f",
-              borderColor: "#2f2f2f",
-            }}
-            className="dark-card"
+            extra={<DollarOutlined />}
+            style={{ textAlign: "center" }}
           >
-            {loadingRevenue ? (
-              <Skeleton.Input active style={{ width: 150 }} />
-            ) : errorRevenue ? (
-              <>
-                <Text type="danger" style={{ color: "#ff4d4f" }}>
-                  Failed to load
-                </Text>
-                <br />
-                <Button
-                  type="link"
-                  onClick={() => userId && fetchRevenue(userId)}
-                  style={{ padding: 0, color: "#1890ff" }}
-                >
-                  Retry
-                </Button>
-              </>
-            ) : (
-              <Title level={3} style={{ color: "#fff" }}>
-                {formatRupiah(totalRevenue || 0)}
-              </Title>
-            )}
+            <Title level={3}>{formatRupiah(totalRevenue)}</Title>
           </Card>
         </Col>
 
-        {/* Booth Count */}
+        {/* Jumlah Booth */}
         <Col xs={24} sm={12} md={8}>
           <Card
-            title={<span style={{ color: "#fff" }}>Jumlah Booth</span>}
+            title="Jumlah Booth"
             bordered={false}
             loading={loadingBooths}
-            extra={<AppstoreAddOutlined style={{ color: "#fff" }} />}
-            style={{
-              textAlign: "center",
-              background: "#2f2f2f",
-              borderColor: "#2f2f2f",
-            }}
-            className="dark-card"
+            extra={<AppstoreAddOutlined />}
+            style={{ textAlign: "center" }}
           >
-            {loadingBooths ? (
-              <Skeleton.Input active style={{ width: 50 }} />
-            ) : errorBooths ? (
-              <>
-                <Text type="danger" style={{ color: "#ff4d4f" }}>
-                  Failed to load
-                </Text>
-                <br />
-                <Button
-                  type="link"
-                  onClick={() => userId && fetchBooths(userId)}
-                  style={{ padding: 0, color: "#1890ff" }}
-                >
-                  Retry
-                </Button>
-              </>
-            ) : (
-              <Title level={3} style={{ color: "#fff" }}>
-                {booths.length}
-              </Title>
-            )}
+            <Title level={3}>{booths.length}</Title>
           </Card>
         </Col>
-      </Row>
 
-      <Row gutter={[24, 24]} style={{ marginTop: 24 }}>
         {/* Your Booths */}
-        <Col xs={24}>
+        <Col xs={24} md={8}>
           <Card
-            title={<span style={{ color: "#fff" }}>Your Booths</span>}
+            title="Your Booths"
             bordered={false}
             loading={loadingBooths}
-            extra={<TeamOutlined style={{ color: "#fff" }} />}
-            style={{ background: "#2f2f2f", borderColor: "#2f2f2f" }}
-            className="dark-card"
+            extra={<TeamOutlined />}
+            style={{ minHeight: "300px" }}
           >
             {loadingBooths ? (
-              <Row gutter={[16, 16]}>
-                {[...Array(3)].map((_, index) => (
-                  <Col xs={24} sm={12} md={8} key={index}>
-                    <Skeleton active paragraph={{ rows: 2 }} />
-                  </Col>
-                ))}
-              </Row>
-            ) : errorBooths ? (
-              <div style={{ textAlign: "center" }}>
-                <Empty
-                  description={
-                    <span style={{ color: "#fff" }}>Failed to load booths</span>
-                  }
-                />
-                <Button
-                  type="primary"
-                  onClick={() => userId && fetchBooths(userId)}
-                  style={{ background: "#1890ff", borderColor: "#1890ff" }}
-                >
-                  Retry
-                </Button>
+              <div style={{ textAlign: "center", paddingTop: 50 }}>
+                <Spin tip="Loading booths..." />
               </div>
             ) : booths.length === 0 ? (
-              <Empty
-                description={
-                  <span style={{ color: "#fff" }}>No booths found</span>
-                }
-              />
+              <Empty description="No booths found" />
             ) : (
-              <Row gutter={[16, 16]}>
-                {booths.map((booth) => (
-                  <Col xs={24} sm={12} md={8} key={booth.id}>
-                    <Card
-                      hoverable
-                      title={
-                        <span style={{ color: "#fff" }}>{booth.name}</span>
-                      }
-                      style={{
-                        height: "100%",
-                        background: "#3f3f3f",
-                        borderColor: "#3f3f3f",
-                      }}
-                      className="dark-card"
-                      actions={[
-                        <Button
-                          key="settings"
-                          icon={<SettingOutlined />}
-                          onClick={() =>
-                            navigate(`/booths/${booth.id}/settings`)
-                          }
-                          block
-                          style={{ color: "#1890ff", borderColor: "#4f4f4f" }}
-                        >
-                          Settings
-                        </Button>,
-                        <Button
-                          key="vouchers"
-                          icon={<GiftOutlined />}
-                          onClick={() =>
-                            navigate(`/booths/${booth.id}/vouchers`)
-                          }
-                          block
-                          style={{ color: "#1890ff", borderColor: "#4f4f4f" }}
-                        >
-                          Vouchers
-                        </Button>,
-                        <Button
-                          key="backgrounds"
-                          icon={<PictureOutlined />}
-                          onClick={() =>
-                            navigate(`/booths/${booth.id}/backgrounds`)
-                          }
-                          block
-                          style={{ color: "#1890ff", borderColor: "#4f4f4f" }}
-                        >
-                          Backgrounds
-                        </Button>,
-                      ]}
-                    >
-                      <Text style={{ color: "#b0b0b0" }}>
-                        Booth ID: {booth.id}
-                      </Text>
-                    </Card>
-                  </Col>
-                ))}
-              </Row>
+              booths.map((booth) => (
+                <Card.Grid
+                  key={booth.id}
+                  style={{ width: "100%", marginBottom: 10, cursor: "pointer" }}
+                  onClick={() => {
+                    // misal mau navigasi ke detail booth
+                    // navigate(`/booth/${booth.id}`);
+                  }}
+                >
+                  <Title level={4} style={{ margin: 0 }}>
+                    {booth.name}
+                  </Title>
+                </Card.Grid>
+              ))
             )}
           </Card>
         </Col>
       </Row>
     </div>
   );
-};
-
-export default HomePage;
+}

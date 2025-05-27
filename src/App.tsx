@@ -22,10 +22,6 @@ import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import { ColorModeContextProvider } from "./contexts/color-mode";
 import { VoucherList } from "./pages/VoucherList";
 import { photoboxDataProvider } from "./providers/photobox-data-provider";
-import BoothSettingsPage from "./pages/BoothSettingsPage";
-import BoothVouchersPage from "./pages/BoothVouchersPage";
-import BoothBackgroundsPage from "./pages/BoothBackgroundsPage";
-import AccountSettingsPage from "./pages/AccountSettingsPage";
 
 function App() {
   return (
@@ -78,19 +74,6 @@ function App() {
                     {/* Optionally, keep the WelcomePage at another path */}
                     <Route path="/welcome" element={<WelcomePage />} />
                     {/* Protected route for the rest */}
-                    <Route
-                      path="/booths/:boothId/settings"
-                      element={<BoothSettingsPage />}
-                    />
-                    <Route
-                      path="/booths/:boothId/vouchers"
-                      element={<BoothVouchersPage />}
-                    />
-                    <Route
-                      path="/booths/:boothId/backgrounds"
-                      element={<BoothBackgroundsPage />}
-                    />
-                    <Route path="/account" element={<AccountSettingsPage />} />
                     <Route
                       element={
                         <ThemedLayoutV2>
