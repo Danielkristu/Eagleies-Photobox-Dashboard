@@ -1,17 +1,40 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// src/pages/Login.tsx
+
 import React from "react";
 import { useLogin } from "@refinedev/core";
-import { Form, Input, Button, notification } from "antd";
+import { Form, Input, Button, App as AntdApp, Typography } from "antd";
+import type { HttpError } from "@refinedev/core";
+
+const { Title } = Typography;
 
 export default function Login() {
   const { mutate: login, isLoading } = useLogin();
 
+  const { notification } = AntdApp.useApp();
+
   const onFinish = (values: { email: string; password: string }) => {
     login(values, {
-      onError: (error: any) => {
+      onError: (error: HttpError) => {
+        let errorMessage = "Unknown error occurred.";
+
+        if (error.statusCode) {
+          if (error.statusCode === 401) {
+            errorMessage = "Invalid email or password.";
+          } else {
+            errorMessage = `Login failed with status code ${error.statusCode}.`;
+          }
+        }
+        if (error.message) {
+          errorMessage = error.message;
+        } else if (error.errors && error.errors.length > 0) {
+          errorMessage = error.errors
+            .map((e: any) => e.message || e.detail || e.field)
+            .join(", ");
+        }
+
         notification.error({
           message: "Login Failed",
-          description: error?.message || "Unknown error",
+          description: errorMessage,
         });
       },
     });
@@ -24,8 +47,10 @@ export default function Login() {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        background: "#f0f2f5",
+        // --- CHANGED: Dark background for the entire page ---
+        backgroundColor: "#202223", // Using the dark color from your HomePage.tsx comments
         padding: 20,
+        borderColor: "#a19787",
       }}
     >
       <Form
@@ -33,11 +58,20 @@ export default function Login() {
         onFinish={onFinish}
         style={{
           width: 350,
-          background: "white",
+          backgroundColor: "black", // Keep the form itself white for contrast
           padding: 24,
           borderRadius: 8,
+          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)", // Slightly stronger shadow for visibility on dark bg
         }}
       >
+        <div style={{ textAlign: "center", marginBottom: 24 }}>
+          <Title level={3} style={{ marginBottom: 0, color: "white" }}>
+            {" "}
+            {/* Default dark text for heading on white card */}
+            Login to PhotoBox
+          </Title>
+        </div>
+
         <Form.Item
           label="Email"
           name="email"
@@ -46,7 +80,7 @@ export default function Login() {
             { type: "email", message: "Invalid email format!" },
           ]}
         >
-          <Input />
+          <Input size="large" />
         </Form.Item>
 
         <Form.Item
@@ -54,11 +88,17 @@ export default function Login() {
           name="password"
           rules={[{ required: true, message: "Please input your password!" }]}
         >
-          <Input.Password />
+          <Input.Password size="large" />
         </Form.Item>
 
         <Form.Item>
-          <Button type="primary" htmlType="submit" loading={isLoading} block>
+          <Button
+            htmlType="submit"
+            loading={isLoading}
+            block
+            size="large"
+            style={{ borderColor: "#a19787" }}
+          >
             Login
           </Button>
         </Form.Item>
