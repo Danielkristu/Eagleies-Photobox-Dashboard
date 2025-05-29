@@ -5,7 +5,6 @@ import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
 import { useNotificationProvider, ThemedLayoutV2 } from "@refinedev/antd";
 import "@refinedev/antd/dist/reset.css";
 import { AppConfigEdit } from "./pages/AppConfigEdit";
-import { TransactionReport } from "./pages/TransactionReport";
 import Login from "./pages/Login";
 import { authProvider } from "./auth/authProvider";
 import HomePage from "./pages/HomePage";
@@ -35,13 +34,7 @@ function App() {
                   authProvider={authProvider}
                   notificationProvider={useNotificationProvider()}
                   routerProvider={routerBindings}
-                  resources={[
-                    {
-                      name: "report",
-                      list: "/report",
-                      icon: <i className="ri-bar-chart-2-line" />,
-                    },
-                  ]}
+                  resources={[]}
                   options={{
                     syncWithLocation: true,
                     warnWhenUnsavedChanges: true,
@@ -85,7 +78,6 @@ function App() {
                         element={<BoothBackgroundsPage />}
                       />
                       <Route path="/settings" element={<AppConfigEdit />} />
-                      <Route path="/report" element={<TransactionReport />} />
                       {/* You might want a 404 page for routes inside the layout */}
                       {/* <Route path="*" element={<NotFoundInsideLayout />} /> */}
                     </Route>
