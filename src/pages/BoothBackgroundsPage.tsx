@@ -1,8 +1,16 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useGetIdentity } from "@refinedev/core";
-import { collection, getDocs, doc, setDoc, updateDoc, deleteDoc } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  doc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+} from "firebase/firestore";
 import { db } from "../firebase";
 import {
   Table,
@@ -17,7 +25,12 @@ import {
   Spin,
   Popconfirm,
 } from "antd";
-import { ArrowLeftOutlined, PlusOutlined, DeleteOutlined, EditOutlined } from "@ant-design/icons";
+import {
+  ArrowLeftOutlined,
+  PlusOutlined,
+  DeleteOutlined,
+  EditOutlined,
+} from "@ant-design/icons";
 
 const { Title, Text } = Typography;
 
@@ -45,14 +58,22 @@ const BoothBackgroundsPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState<boolean>(false);
-  const [selectedBackground, setSelectedBackground] = useState<Background | null>(null);
+  const [selectedBackground, setSelectedBackground] =
+    useState<Background | null>(null);
   const [form] = Form.useForm();
 
   const fetchBackgrounds = async () => {
     if (!userId || !boothId) return;
     setLoading(true);
     try {
-      const backgroundsRef = collection(db, "Clients", userId, "Booths", boothId, "backgrounds");
+      const backgroundsRef = collection(
+        db,
+        "Clients",
+        userId,
+        "Booths",
+        boothId,
+        "backgrounds"
+      );
       const snapshot = await getDocs(backgroundsRef);
       const backgroundData = snapshot.docs.map((doc) => ({
         id: doc.id,
@@ -63,7 +84,8 @@ const BoothBackgroundsPage: React.FC = () => {
     } catch (error: any) {
       notification.error({
         message: "Error fetching backgrounds",
-        description: error.message || "An error occurred while fetching backgrounds.",
+        description:
+          error.message || "An error occurred while fetching backgrounds.",
       });
     } finally {
       setLoading(false);
@@ -74,7 +96,15 @@ const BoothBackgroundsPage: React.FC = () => {
     if (!userId || !boothId) return;
     try {
       const backgroundId = Date.now().toString();
-      const backgroundRef = doc(db, "Clients", userId, "Booths", boothId, "backgrounds", backgroundId);
+      const backgroundRef = doc(
+        db,
+        "Clients",
+        userId,
+        "Booths",
+        boothId,
+        "backgrounds",
+        backgroundId
+      );
       await setDoc(backgroundRef, {
         name: values.name,
         url: values.url,
@@ -91,7 +121,8 @@ const BoothBackgroundsPage: React.FC = () => {
     } catch (error: any) {
       notification.error({
         message: "Error adding background",
-        description: error.message || "An error occurred while adding the background.",
+        description:
+          error.message || "An error occurred while adding the background.",
       });
     }
   };
@@ -122,7 +153,8 @@ const BoothBackgroundsPage: React.FC = () => {
     } catch (error: any) {
       notification.error({
         message: "Error updating background",
-        description: error.message || "An error occurred while updating the background.",
+        description:
+          error.message || "An error occurred while updating the background.",
       });
     }
   };
@@ -130,7 +162,15 @@ const BoothBackgroundsPage: React.FC = () => {
   const toggleStatus = async (backgroundId: string, checked: boolean) => {
     if (!userId || !boothId) return;
     try {
-      const backgroundRef = doc(db, "Clients", userId, "Booths", boothId, "backgrounds", backgroundId);
+      const backgroundRef = doc(
+        db,
+        "Clients",
+        userId,
+        "Booths",
+        boothId,
+        "backgrounds",
+        backgroundId
+      );
       await updateDoc(backgroundRef, { is_active: checked });
       notification.success({
         message: "Success",
@@ -140,7 +180,8 @@ const BoothBackgroundsPage: React.FC = () => {
     } catch (error: any) {
       notification.error({
         message: "Error updating status",
-        description: error.message || "An error occurred while updating the status.",
+        description:
+          error.message || "An error occurred while updating the status.",
       });
     }
   };
@@ -148,7 +189,15 @@ const BoothBackgroundsPage: React.FC = () => {
   const handleDeleteBackground = async (backgroundId: string) => {
     if (!userId || !boothId) return;
     try {
-      const backgroundRef = doc(db, "Clients", userId, "Booths", boothId, "backgrounds", backgroundId);
+      const backgroundRef = doc(
+        db,
+        "Clients",
+        userId,
+        "Booths",
+        boothId,
+        "backgrounds",
+        backgroundId
+      );
       await deleteDoc(backgroundRef);
       notification.success({
         message: "Success",
@@ -158,7 +207,8 @@ const BoothBackgroundsPage: React.FC = () => {
     } catch (error: any) {
       notification.error({
         message: "Error deleting background",
-        description: error.message || "An error occurred while deleting the background.",
+        description:
+          error.message || "An error occurred while deleting the background.",
       });
     }
   };
@@ -279,18 +329,27 @@ const BoothBackgroundsPage: React.FC = () => {
           <Form.Item
             label="Name"
             name="name"
-            rules={[{ required: true, message: "Please enter the background name" }]}
+            rules={[
+              { required: true, message: "Please enter the background name" },
+            ]}
           >
             <Input placeholder="Enter background name (e.g., Summer Theme)" />
           </Form.Item>
           <Form.Item
             label="Background URL"
             name="url"
-            rules={[{ required: true, message: "Please enter the background URL" }]}
+            rules={[
+              { required: true, message: "Please enter the background URL" },
+            ]}
           >
             <Input placeholder="Enter background image URL" />
           </Form.Item>
-          <Form.Item label="Active" name="is_active" valuePropName="checked" initialValue={false}>
+          <Form.Item
+            label="Active"
+            name="is_active"
+            valuePropName="checked"
+            initialValue={false}
+          >
             <Switch checkedChildren="ON" unCheckedChildren="OFF" />
           </Form.Item>
           <Form.Item>
@@ -313,18 +372,27 @@ const BoothBackgroundsPage: React.FC = () => {
           <Form.Item
             label="Name"
             name="name"
-            rules={[{ required: true, message: "Please enter the background name" }]}
+            rules={[
+              { required: true, message: "Please enter the background name" },
+            ]}
           >
             <Input placeholder="Enter background name" />
           </Form.Item>
           <Form.Item
             label="Background URL"
             name="url"
-            rules={[{ required: true, message: "Please enter the background URL" }]}
+            rules={[
+              { required: true, message: "Please enter the background URL" },
+            ]}
           >
             <Input placeholder="Enter background image URL" />
           </Form.Item>
-          <Form.Item label="Active" name="is_active" valuePropName="checked" initialValue={false}>
+          <Form.Item
+            label="Active"
+            name="is_active"
+            valuePropName="checked"
+            initialValue={false}
+          >
             <Switch checkedChildren="ON" unCheckedChildren="OFF" />
           </Form.Item>
           <Form.Item>

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -72,7 +73,8 @@ const BoothSettingsPage: React.FC = () => {
     } catch (error: any) {
       notification.error({
         message: "Error fetching booth data",
-        description: error.message || "An error occurred while fetching booth data.",
+        description:
+          error.message || "An error occurred while fetching booth data.",
       });
     } finally {
       setLoading(false);
@@ -100,7 +102,8 @@ const BoothSettingsPage: React.FC = () => {
     } catch (error: any) {
       notification.error({
         message: "Error saving settings",
-        description: error.message || "An error occurred while saving settings.",
+        description:
+          error.message || "An error occurred while saving settings.",
       });
     } finally {
       setSaving(false);
@@ -116,7 +119,16 @@ const BoothSettingsPage: React.FC = () => {
   if (loading) {
     return (
       // Consistent loading style with BoothBackgroundsPage
-      <div style={{ padding: 24, textAlign: "center", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div
+        style={{
+          padding: 24,
+          textAlign: "center",
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         <Spin tip="Loading booth settings..." />
       </div>
     );
@@ -135,37 +147,45 @@ const BoothSettingsPage: React.FC = () => {
       </Button>
       <Title level={2}>Booth Settings</Title>
       <Text type="secondary">Booth ID: {boothId}</Text>
-      <Card style={{ marginTop: 16 }}> {/* Remove explicit dark styles */}
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSave}
-        >
+      <Card style={{ marginTop: 16 }}>
+        {" "}
+        {/* Remove explicit dark styles */}
+        <Form form={form} layout="vertical" onFinish={handleSave}>
           <Form.Item
             label="Booth Name" // Rely on global theme for label color
             name="name"
             rules={[{ required: true, message: "Please enter the booth name" }]}
           >
-            <Input placeholder="Enter booth name" /> {/* Rely on global theme for input style */}
+            <Input placeholder="Enter booth name" />{" "}
+            {/* Rely on global theme for input style */}
           </Form.Item>
           <Form.Item
             label="Callback URL"
             name="callback_url"
-            rules={[{ required: true, message: "Please enter the callback URL" }]}
+            rules={[
+              { required: true, message: "Please enter the callback URL" },
+            ]}
           >
             <Input placeholder="Enter callback URL" />
           </Form.Item>
           <Form.Item
             label="DSLRBooth API Key"
             name="dslrbooth_api"
-            rules={[{ required: true, message: "Please enter the DSLRBooth API key" }]}
+            rules={[
+              { required: true, message: "Please enter the DSLRBooth API key" },
+            ]}
           >
             <Input placeholder="Enter DSLRBooth API key" />
           </Form.Item>
           <Form.Item
             label="DSLRBooth Password"
             name="dslrbooth_password"
-            rules={[{ required: true, message: "Please enter the DSLRBooth password" }]}
+            rules={[
+              {
+                required: true,
+                message: "Please enter the DSLRBooth password",
+              },
+            ]}
           >
             <Input.Password placeholder="Enter DSLRBooth password" />
           </Form.Item>

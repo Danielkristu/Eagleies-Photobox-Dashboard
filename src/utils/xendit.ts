@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import axios from "axios";
