@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
 import { useLogin } from "@refinedev/core";
 import { Form, Input, Button, notification } from "antd";
@@ -17,18 +18,25 @@ export default function Login() {
   };
 
   return (
-    <div style={{
-      height: "100vh",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      background: "#f0f2f5",
-      padding: 20,
-    }}>
+    <div
+      style={{
+        height: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        background: "#f0f2f5",
+        padding: 20,
+      }}
+    >
       <Form
         layout="vertical"
         onFinish={onFinish}
-        style={{ width: 350, background: "white", padding: 24, borderRadius: 8 }}
+        style={{
+          width: 350,
+          background: "white",
+          padding: 24,
+          borderRadius: 8,
+        }}
       >
         <Form.Item
           label="Email"

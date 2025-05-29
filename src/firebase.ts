@@ -2,6 +2,7 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+import { getFunctions } from "firebase/functions";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCIpfZfiR5_2CWn5WgQKi_tZqeDP6KACAM",
@@ -14,7 +15,8 @@ const firebaseConfig = {
   measurementId: "G-1EVEW5N8NF",
 };
 
-const app = initializeApp(firebaseConfig);
+export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app); // ✅ pastikan ini ADA!
 export const storage = getStorage(app, "gs://egc-photobox.firebasestorage.app");
+export const functions = getFunctions(app);

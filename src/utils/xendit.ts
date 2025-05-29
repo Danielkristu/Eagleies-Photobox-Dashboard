@@ -90,3 +90,36 @@ export async function fetchTotalRevenueFromXendit(userId: string) {
     return 0;
   }
 }
+
+// Fungsi untuk mengambil daftar invoice dari Xendit
+export async function fetchInvoicesFromXendit(userId: string) {
+  const xenditApiKey = await getXenditApiKey(userId);
+
+  if (!xenditApiKey) {
+    notification.error({
+      message: "API Key Missing",
+      description: "Cannot fetch invoices without an API key.",
+    });
+    return [];
+  }
+
+  try {
+    const response = await axios.get("https://api.xendit.co/v2/invoices", {
+      headers: {
+        Authorization: `Basic ${btoa(xenditApiKey + ":")}`,
+      },
+    });
+
+    console.log("Response from Xendit:", response.data);
+
+    const invoices = response.data || []; // Corrected to use response.data directly
+    return invoices;
+  } catch (error) {
+    console.error("Error fetching invoices from Xendit", error);
+    notification.error({
+      message: "Error fetching invoices",
+      description: "There was an issue fetching the invoices from Xendit.",
+    });
+    return [];
+  }
+}

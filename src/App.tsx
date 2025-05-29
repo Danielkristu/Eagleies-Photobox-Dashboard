@@ -21,6 +21,11 @@ import BoothBackgroundsPage from "./pages/BoothBackgroundsPage";
 import BoothSettingsPage from "./pages/BoothSettingsPage";
 import BoothVouchersPage from "./pages/BoothVouchersPage";
 
+// --- NEW IMPORTS ---
+import TransactionReportPage from "./pages/TransactionReportPage";
+import { firestoreDataProvider } from "./providers/firestore-data-provider"; // Assuming this is your Firestore Data Provider
+import ChatTransactionsPage from "./pages/ChatTransactionPage";
+
 function App() {
   return (
     <BrowserRouter>
@@ -33,7 +38,18 @@ function App() {
                   authProvider={authProvider}
                   notificationProvider={useNotificationProvider()}
                   routerProvider={routerBindings}
-                  resources={[]}
+                  // --- ADDED: firestoreDataProvider ---
+                  dataProvider={firestoreDataProvider}
+                  resources={[
+            {
+  name: "chat-transactions",
+  list: "/chat",
+  meta: {
+    label: "Transaction Report",
+  },
+}
+            // Other existing resources...
+          ]}
                   options={{
                     syncWithLocation: true,
                     warnWhenUnsavedChanges: true,
@@ -76,6 +92,7 @@ function App() {
                         path="/booths/:boothId/backgrounds"
                         element={<BoothBackgroundsPage />}
                       />
+                      <Route path="/chat" element={<ChatTransactionsPage />} />
                       {/* You might want a 404 page for routes inside the layout */}
                       {/* <Route path="*" element={<NotFoundInsideLayout />} /> */}
                     </Route>

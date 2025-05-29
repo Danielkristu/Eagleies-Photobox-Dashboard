@@ -62,7 +62,7 @@ const BoothSettingsPage: React.FC = () => {
         return;
       }
 
-      const boothData = boothSnap.data() as BoothSettings;
+      const boothData = boothSnap.data() as BoothSettings; // Should be "Jellypop Jakarta"
       form.setFieldsValue({
         name: boothData.name,
         callback_url: boothData.settings?.callback_url || "",
@@ -156,7 +156,7 @@ const BoothSettingsPage: React.FC = () => {
             name="name"
             rules={[{ required: true, message: "Please enter the booth name" }]}
           >
-            <Input placeholder="Enter booth name" />{" "}
+            <Input placeholder="Enter booth name" />
             {/* Rely on global theme for input style */}
           </Form.Item>
           <Form.Item
