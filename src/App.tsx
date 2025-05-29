@@ -4,7 +4,6 @@ import { DevtoolsPanel, DevtoolsProvider } from "@refinedev/devtools";
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
 import { useNotificationProvider, ThemedLayoutV2 } from "@refinedev/antd";
 import "@refinedev/antd/dist/reset.css";
-import { AppConfigEdit } from "./pages/AppConfigEdit";
 import Login from "./pages/Login";
 import { authProvider } from "./auth/authProvider";
 import HomePage from "./pages/HomePage";
@@ -77,7 +76,6 @@ function App() {
                         path="/booths/:boothId/backgrounds"
                         element={<BoothBackgroundsPage />}
                       />
-                      <Route path="/settings" element={<AppConfigEdit />} />
                       {/* You might want a 404 page for routes inside the layout */}
                       {/* <Route path="*" element={<NotFoundInsideLayout />} /> */}
                     </Route>
