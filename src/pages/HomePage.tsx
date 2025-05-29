@@ -147,7 +147,7 @@ const HomePage: React.FC = () => {
       <Title level={2} style={{ marginBottom: 24 }}>
         {" "}
         {/* REMOVE color: "#fff" */}
-        Dashboard
+        Welcome, User
       </Title>
 
       <Row gutter={[24, 24]}>
