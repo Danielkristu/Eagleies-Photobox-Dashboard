@@ -15,7 +15,7 @@ import {
   InputNumber,
 } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
-import Header from "../components/Header";
+// import Header from "../components/Header"; // Remove if handled by layout
 
 const { Title, Text } = Typography;
 
@@ -45,7 +45,6 @@ const BoothSettingsPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
 
-  // Fetch booth data
   const fetchBoothData = async () => {
     if (!userId || !boothId) return;
     setLoading(true);
@@ -58,12 +57,11 @@ const BoothSettingsPage: React.FC = () => {
           message: "Error",
           description: "Booth not found.",
         });
-        navigate("/");
+        navigate("/"); // Or a more appropriate error/redirect path
         return;
       }
 
       const boothData = boothSnap.data() as BoothSettings;
-      // Prepopulate form with fetched data
       form.setFieldsValue({
         name: boothData.name,
         callback_url: boothData.settings?.callback_url || "",
@@ -81,7 +79,6 @@ const BoothSettingsPage: React.FC = () => {
     }
   };
 
-  // Save updated settings
   const handleSave = async (values: any) => {
     if (!userId || !boothId) return;
     setSaving(true);
@@ -114,98 +111,80 @@ const BoothSettingsPage: React.FC = () => {
     if (userId && boothId) {
       fetchBoothData();
     }
-  }, [userId, boothId]);
+  }, [userId, boothId, form]); // Added form to dependencies for setFieldsValue
 
   if (loading) {
     return (
-      <div style={{ padding: 24, textAlign: "center", background: "#202223", minHeight: "100vh" }}>
-        <Spin tip="Loading booth settings..." style={{ color: "#fff" }} />
+      // Consistent loading style with BoothBackgroundsPage
+      <div style={{ padding: 24, textAlign: "center", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Spin tip="Loading booth settings..." />
       </div>
     );
   }
 
   return (
-    <div style={{ padding: 24, background: "#202223", minHeight: "100vh" }}>
-      <Header />
+    // Consistent page padding, rely on layout for overall background
+    <div style={{ padding: 24 }}>
+      {/* <Header /> Remove if handled by layout */}
       <Button
         icon={<ArrowLeftOutlined />}
-        onClick={() => navigate("/")}
-        style={{ marginBottom: 16, background: "#2f2f2f", borderColor: "#2f2f2f", color: "#fff" }}
+        onClick={() => navigate("/")} // Consider navigating to a more specific "back" path if needed
+        style={{ marginBottom: 16 }}
       >
         Back to Dashboard
       </Button>
-      <Title level={2} style={{ color: "#fff" }}>Booth Settings</Title>
-      <Text type="secondary" style={{ color: "#b0b0b0" }}>Booth ID: {boothId}</Text>
-      <Card style={{ marginTop: 16, background: "#2f2f2f", borderColor: "#2f2f2f" }} className="dark-card">
+      <Title level={2}>Booth Settings</Title>
+      <Text type="secondary">Booth ID: {boothId}</Text>
+      <Card style={{ marginTop: 16 }}> {/* Remove explicit dark styles */}
         <Form
           form={form}
           layout="vertical"
           onFinish={handleSave}
-          initialValues={{
-            name: "",
-            callback_url: "",
-            dslrbooth_api: "",
-            dslrbooth_password: "",
-            price: 0,
-          }}
         >
           <Form.Item
-            label={<span style={{ color: "#fff" }}>Booth Name</span>}
+            label="Booth Name" // Rely on global theme for label color
             name="name"
             rules={[{ required: true, message: "Please enter the booth name" }]}
           >
-            <Input
-              placeholder="Enter booth name"
-              style={{ background: "#3f3f3f", color: "#fff", borderColor: "#3f3f3f" }}
-            />
+            <Input placeholder="Enter booth name" /> {/* Rely on global theme for input style */}
           </Form.Item>
           <Form.Item
-            label={<span style={{ color: "#fff" }}>Callback URL</span>}
+            label="Callback URL"
             name="callback_url"
             rules={[{ required: true, message: "Please enter the callback URL" }]}
           >
-            <Input
-              placeholder="Enter callback URL"
-              style={{ background: "#3f3f3f", color: "#fff", borderColor: "#3f3f3f" }}
-            />
+            <Input placeholder="Enter callback URL" />
           </Form.Item>
           <Form.Item
-            label={<span style={{ color: "#fff" }}>DSLRBooth API Key</span>}
+            label="DSLRBooth API Key"
             name="dslrbooth_api"
             rules={[{ required: true, message: "Please enter the DSLRBooth API key" }]}
           >
-            <Input
-              placeholder="Enter DSLRBooth API key"
-              style={{ background: "#3f3f3f", color: "#fff", borderColor: "#3f3f3f" }}
-            />
+            <Input placeholder="Enter DSLRBooth API key" />
           </Form.Item>
           <Form.Item
-            label={<span style={{ color: "#fff" }}>DSLRBooth Password</span>}
+            label="DSLRBooth Password"
             name="dslrbooth_password"
             rules={[{ required: true, message: "Please enter the DSLRBooth password" }]}
           >
-            <Input.Password
-              placeholder="Enter DSLRBooth password"
-              style={{ background: "#3f3f3f", color: "#fff", borderColor: "#3f3f3f" }}
-            />
+            <Input.Password placeholder="Enter DSLRBooth password" />
           </Form.Item>
           <Form.Item
-            label={<span style={{ color: "#fff" }}>Price (IDR)</span>}
+            label="Price (IDR)"
             name="price"
             rules={[{ required: true, message: "Please enter the price" }]}
           >
             <InputNumber
               min={0}
-              style={{ width: "100%", background: "#3f3f3f", color: "#fff", borderColor: "#3f3f3f" }}
+              style={{ width: "100%" }}
               placeholder="Enter price"
             />
           </Form.Item>
           <Form.Item>
             <Button
-              type="primary"
+              type="primary" // Standard primary button
               htmlType="submit"
               loading={saving}
-              style={{ background: "#1890ff", borderColor: "#1890ff" }}
             >
               Save Settings
             </Button>

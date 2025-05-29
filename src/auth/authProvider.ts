@@ -1,4 +1,5 @@
-import { AuthBindings } from "@refinedev/core";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { AuthBindings, OnErrorResponse } from "@refinedev/core";
 import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
@@ -73,4 +74,7 @@ export const authProvider: AuthBindings = {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     return user?.uid ? { id: user.uid } : null;
   },
+  onError: function (error: any): Promise<OnErrorResponse> {
+    throw new Error("Function not implemented.");
+  }
 };

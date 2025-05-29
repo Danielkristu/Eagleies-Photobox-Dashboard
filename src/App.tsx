@@ -1,11 +1,9 @@
+// src/App.tsx
 import { Refine, WelcomePage } from "@refinedev/core";
 import { DevtoolsPanel, DevtoolsProvider } from "@refinedev/devtools";
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
-import { voucherDataProvider } from "./providers/voucher-data-provider";
 import { useNotificationProvider, ThemedLayoutV2 } from "@refinedev/antd";
 import "@refinedev/antd/dist/reset.css";
-import { VoucherCreate } from "./pages/VoucherCreate";
-import { VoucherEdit } from "./pages/VoucherEdit";
 import { AppConfigEdit } from "./pages/AppConfigEdit";
 import { TransactionReport } from "./pages/TransactionReport";
 import Login from "./pages/Login";
@@ -18,10 +16,8 @@ import routerBindings, {
 
 import { ConfigProvider, App as AntdApp } from "antd";
 import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
-
+import CustomHeader from "./components/Header"; // Correctly imported
 import { ColorModeContextProvider } from "./contexts/color-mode";
-import { VoucherList } from "./pages/VoucherList";
-import { photoboxDataProvider } from "./providers/photobox-data-provider";
 import AccountSettingsPage from "./pages/AccountSettingsPage";
 import BoothBackgroundsPage from "./pages/BoothBackgroundsPage";
 import BoothSettingsPage from "./pages/BoothSettingsPage";
@@ -37,25 +33,9 @@ function App() {
               <DevtoolsProvider>
                 <Refine
                   authProvider={authProvider}
-                  dataProvider={{
-                    default: voucherDataProvider,
-                    photobox: photoboxDataProvider,
-                  }}
                   notificationProvider={useNotificationProvider()}
                   routerProvider={routerBindings}
                   resources={[
-                    {
-                      name: "Voucher",
-                      list: "/voucher",
-                      create: "/voucher/create",
-                      edit: "/voucher/edit/:id",
-                      icon: <i className="ri-gift-line" />,
-                    },
-                    {
-                      name: "Settings",
-                      list: "/settings",
-                      icon: <i className="ri-settings-3-line" />,
-                    },
                     {
                       name: "report",
                       list: "/report",
@@ -70,46 +50,47 @@ function App() {
                   }}
                 >
                   <Routes>
-                    {/* Login route */}
+                    {/* Routes that should NOT use ThemedLayoutV2 (e.g., public pages) */}
                     <Route path="/login" element={<Login />} />
-                    {/* Home route */}
-                    <Route path="/" element={<HomePage />} />{" "}
-                    {/* Ganti / ke HomePage */}
-                    {/* Optionally, keep the WelcomePage at another path */}
-                    <Route path="/welcome" element={<WelcomePage />} />
-                    {/* Protected route for the rest */}
-                    <Route
-                      path="/booths/:boothId/settings"
-                      element={<BoothSettingsPage />}
-                    />
-                    <Route
-                      path="/booths/:boothId/vouchers"
-                      element={<BoothVouchersPage />}
-                    />
-                    <Route
-                      path="/booths/:boothId/backgrounds"
-                      element={<BoothBackgroundsPage />}
-                    />
-                    <Route path="/account" element={<AccountSettingsPage />} />
+                    <Route path="/welcome" element={<WelcomePage />} />{" "}
+                    {/* If WelcomePage is public/doesn't need the main header */}
+                    {/* Routes that SHOULD use ThemedLayoutV2 with CustomHeader */}
                     <Route
                       element={
-                        <ThemedLayoutV2>
+                        <ThemedLayoutV2 Header={CustomHeader}>
+                          {" "}
+                          {/* Correct usage of ThemedLayoutV2 and CustomHeader */}
                           <Outlet />
                         </ThemedLayoutV2>
                       }
                     >
-                      <Route path="/voucher" element={<VoucherList />} />
+                      {/* --- Move routes that need the layout here --- */}
+                      <Route path="/" element={<HomePage />} />{" "}
+                      {/* HomePage now uses the layout */}
                       <Route
-                        path="/voucher/create"
-                        element={<VoucherCreate />}
+                        path="/account"
+                        element={<AccountSettingsPage />}
+                      />{" "}
+                      {/* AccountSettingsPage now uses the layout */}
+                      <Route
+                        path="/booths/:boothId/settings"
+                        element={<BoothSettingsPage />}
                       />
                       <Route
-                        path="/voucher/edit/:id"
-                        element={<VoucherEdit />}
+                        path="/booths/:boothId/vouchers"
+                        element={<BoothVouchersPage />}
+                      />
+                      <Route
+                        path="/booths/:boothId/backgrounds"
+                        element={<BoothBackgroundsPage />}
                       />
                       <Route path="/settings" element={<AppConfigEdit />} />
                       <Route path="/report" element={<TransactionReport />} />
+                      {/* You might want a 404 page for routes inside the layout */}
+                      {/* <Route path="*" element={<NotFoundInsideLayout />} /> */}
                     </Route>
+                    {/* A global 404 page for any routes not matched above */}
+                    {/* <Route path="*" element={<GlobalNotFound />} /> */}
                   </Routes>
 
                   <RefineKbar />

@@ -1,3 +1,4 @@
+// src/pages/HomePage.tsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -21,9 +22,10 @@ import {
 } from "@ant-design/icons";
 import { useGetIdentity } from "@refinedev/core";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "../firebase";
-import { fetchTotalRevenueFromXendit } from "../utils/xendit";
-import Header from "../components/Header";
+import { db } from "../firebase"; // Ensure this path is correct
+import { fetchTotalRevenueFromXendit } from "../utils/xendit"; // Ensure this path is correct
+
+// Header component is assumed to be handled by the main layout (e.g., ThemedLayoutV2 in App.tsx)
 
 const { Title, Text } = Typography;
 
@@ -43,35 +45,29 @@ interface UserIdentity {
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { data: userIdentity } = useGetIdentity<UserIdentity>();
-  console.log("User identity:", userIdentity);
-  const userId = userIdentity?.id;
 
   const [booths, setBooths] = useState<Booth[]>([]);
   const [totalRevenue, setTotalRevenue] = useState<number | null>(null);
   const [loadingBooths, setLoadingBooths] = useState<boolean>(true);
   const [loadingRevenue, setLoadingRevenue] = useState<boolean>(true);
   const [errorBooths, setErrorBooths] = useState<string | null>(null);
-  const [errorRevenue, setErrorRevenue] = useState<string | null>(null); // Fixed: Changed state to useState
+  const [errorRevenue, setErrorRevenue] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState<boolean>(true);
 
-  const fetchBooths = async (userId: string) => {
+  const fetchBoothsData = async (currentUserId: string) => {
     setLoadingBooths(true);
     setErrorBooths(null);
     try {
-      const colRef = collection(db, "Clients", userId, "Booths");
-      console.log("Querying Firestore at path:", colRef.path);
+      const colRef = collection(db, "Clients", currentUserId, "Booths");
       const snapshot = await getDocs(colRef);
-      console.log("Booths snapshot:", snapshot.docs);
       const boothData = snapshot.docs.map((doc) => ({
         id: doc.id,
         name: doc.data().name || "Unnamed Booth",
         settings: doc.data().settings || {},
         created_at: doc.data().created_at || { seconds: 0, nanoseconds: 0 },
       })) as Booth[];
-      console.log("Parsed booth data:", boothData);
       setBooths(boothData);
     } catch (error: any) {
-      console.log("Error fetching booths:", error.message);
       const errorMessage =
         error.message || "There was an issue fetching your booths.";
       setErrorBooths(errorMessage);
@@ -84,11 +80,11 @@ const HomePage: React.FC = () => {
     }
   };
 
-  const fetchRevenue = async (userId: string) => {
+  const fetchRevenueData = async (currentUserId: string) => {
     setLoadingRevenue(true);
     setErrorRevenue(null);
     try {
-      const revenue = await fetchTotalRevenueFromXendit(userId);
+      const revenue = await fetchTotalRevenueFromXendit(currentUserId);
       setTotalRevenue(revenue);
     } catch (error: any) {
       const errorMessage =
@@ -104,16 +100,14 @@ const HomePage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!userIdentity) {
-      console.log("No userId available");
+    if (!userIdentity || !userIdentity.id) {
       setAuthLoading(true);
       return;
     }
     setAuthLoading(false);
-    console.log("Fetching booths and revenue for userId:", userId);
-    fetchBooths(userId);
-    fetchRevenue(userId);
-  }, [userIdentity, userId]);
+    fetchBoothsData(userIdentity.id);
+    fetchRevenueData(userIdentity.id);
+  }, [userIdentity]);
 
   const formatRupiah = (amount: number) =>
     new Intl.NumberFormat("id-ID", {
@@ -128,19 +122,30 @@ const HomePage: React.FC = () => {
         style={{
           padding: 24,
           textAlign: "center",
-          background: "#202223",
-          minHeight: "100vh",
+          // background: "#202223", // REMOVE: Rely on layout background
+          minHeight: "100vh", // Can keep for full height before content loads
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
         }}
       >
-        <Spin tip="Loading user data..." style={{ color: "#fff" }} />
+        <Spin tip="Loading user data..." />{" "}
+        {/* Spin color will be from theme */}
       </div>
     );
   }
 
   return (
-    <div style={{ padding: 24, background: "#202223", minHeight: "100vh" }}>
-      <Header />
-      <Title level={2} style={{ color: "#fff" }}>
+    // REMOVE explicit background, rely on layout for overall background
+    // Keep padding for content spacing
+    <div
+      style={{
+        padding: 24 /* minHeight: "100vh" // Usually not needed if layout handles height */,
+      }}
+    >
+      <Title level={2} style={{ marginBottom: 24 }}>
+        {" "}
+        {/* REMOVE color: "#fff" */}
         Dashboard
       </Title>
 
@@ -148,35 +153,38 @@ const HomePage: React.FC = () => {
         {/* Total Revenue */}
         <Col xs={24} sm={12} md={8}>
           <Card
-            title={<span style={{ color: "#fff" }}>Total Pendapatan</span>}
+            title="Total Pendapatan" // REMOVE <span style={{ color: "#fff" }}>
             bordered={false}
-            loading={loadingRevenue}
-            extra={<DollarOutlined style={{ color: "#fff" }} />}
-            style={{
-              textAlign: "center",
-              background: "#2f2f2f",
-              borderColor: "#2f2f2f",
-            }}
-            className="dark-card"
+            extra={<DollarOutlined />} // REMOVE style={{ color: "#fff" }}
+            style={{ textAlign: "center" /* REMOVE background: "#2f2f2f" */ }}
           >
             {loadingRevenue ? (
-              <Skeleton.Input active style={{ width: 150 }} />
+              <Skeleton.Input
+                active
+                style={{ width: 150, display: "block", margin: "auto" }}
+              />
             ) : errorRevenue ? (
               <>
-                <Text type="danger" style={{ color: "#ff4d4f" }}>
+                <Text type="danger">
+                  {" "}
+                  {/* style={{ color: "#ff4d4f" }} is default for type="danger" */}
                   Failed to load
                 </Text>
                 <br />
                 <Button
                   type="link"
-                  onClick={() => userId && fetchRevenue(userId)}
-                  style={{ padding: 0, color: "#1890ff" }}
+                  onClick={() =>
+                    userIdentity?.id && fetchRevenueData(userIdentity.id)
+                  }
+                  // style={{ padding: 0, color: "#1890ff" }} // type="link" usually gets themed color
                 >
                   Retry
                 </Button>
               </>
             ) : (
-              <Title level={3} style={{ color: "#fff" }}>
+              <Title level={3} style={{ margin: 0 }}>
+                {" "}
+                {/* REMOVE color: "#fff" */}
                 {formatRupiah(totalRevenue || 0)}
               </Title>
             )}
@@ -186,35 +194,34 @@ const HomePage: React.FC = () => {
         {/* Booth Count */}
         <Col xs={24} sm={12} md={8}>
           <Card
-            title={<span style={{ color: "#fff" }}>Jumlah Booth</span>}
+            title="Jumlah Booth" // REMOVE <span style={{ color: "#fff" }}>
             bordered={false}
-            loading={loadingBooths}
-            extra={<AppstoreAddOutlined style={{ color: "#fff" }} />}
-            style={{
-              textAlign: "center",
-              background: "#2f2f2f",
-              borderColor: "#2f2f2f",
-            }}
-            className="dark-card"
+            extra={<AppstoreAddOutlined />} // REMOVE style={{ color: "#fff" }}
+            style={{ textAlign: "center" /* REMOVE background: "#2f2f2f" */ }}
           >
             {loadingBooths ? (
-              <Skeleton.Input active style={{ width: 50 }} />
+              <Skeleton.Input
+                active
+                style={{ width: 50, display: "block", margin: "auto" }}
+              />
             ) : errorBooths ? (
               <>
-                <Text type="danger" style={{ color: "#ff4d4f" }}>
-                  Failed to load
-                </Text>
+                <Text type="danger">Failed to load</Text>
                 <br />
                 <Button
                   type="link"
-                  onClick={() => userId && fetchBooths(userId)}
-                  style={{ padding: 0, color: "#1890ff" }}
+                  onClick={() =>
+                    userIdentity?.id && fetchBoothsData(userIdentity.id)
+                  }
+                  // style={{ padding: 0, color: "#1890ff" }}
                 >
                   Retry
                 </Button>
               </>
             ) : (
-              <Title level={3} style={{ color: "#fff" }}>
+              <Title level={3} style={{ margin: 0 }}>
+                {" "}
+                {/* REMOVE color: "#fff" */}
                 {booths.length}
               </Title>
             )}
@@ -226,57 +233,66 @@ const HomePage: React.FC = () => {
         {/* Your Booths */}
         <Col xs={24}>
           <Card
-            title={<span style={{ color: "#fff" }}>Your Booths</span>}
+            title="Your Booths" // REMOVE <span style={{ color: "#fff" }}>
             bordered={false}
-            loading={loadingBooths}
-            extra={<TeamOutlined style={{ color: "#fff" }} />}
-            style={{ background: "#2f2f2f", borderColor: "#2f2f2f" }}
-            className="dark-card"
+            extra={<TeamOutlined />} // REMOVE style={{ color: "#fff" }}
+            // style={{ background: "#2f2f2f" }} // REMOVE
           >
             {loadingBooths ? (
               <Row gutter={[16, 16]}>
-                {[...Array(3)].map((_, index) => (
-                  <Col xs={24} sm={12} md={8} key={index}>
-                    <Skeleton active paragraph={{ rows: 2 }} />
-                  </Col>
-                ))}
+                {[...Array(booths.length > 0 ? booths.length : 2)].map(
+                  (
+                    _,
+                    index // Show 2 skeletons if no booths yet
+                  ) => (
+                    <Col xs={24} sm={12} md={8} lg={6} key={index}>
+                      <Skeleton active paragraph={{ rows: 3 }} />
+                    </Col>
+                  )
+                )}
               </Row>
             ) : errorBooths ? (
               <div style={{ textAlign: "center" }}>
                 <Empty
                   description={
-                    <span style={{ color: "#fff" }}>Failed to load booths</span>
+                    <Text type="secondary">Failed to load booths</Text>
                   }
-                />
+                />{" "}
+                {/* Use Text type="secondary" or rely on Empty's theme */}
                 <Button
                   type="primary"
-                  onClick={() => userId && fetchBooths(userId)}
-                  style={{ background: "#1890ff", borderColor: "#1890ff" }}
+                  onClick={() =>
+                    userIdentity?.id && fetchBoothsData(userIdentity.id)
+                  }
+                  style={{ marginTop: 16 }}
                 >
                   Retry
                 </Button>
               </div>
             ) : booths.length === 0 ? (
               <Empty
-                description={
-                  <span style={{ color: "#fff" }}>No booths found</span>
-                }
+                description={<Text type="secondary">No booths found.</Text>}
               />
             ) : (
               <Row gutter={[16, 16]}>
                 {booths.map((booth) => (
-                  <Col xs={24} sm={12} md={8} key={booth.id}>
+                  <Col xs={24} sm={12} md={8} lg={6} key={booth.id}>
                     <Card
                       hoverable
-                      title={
-                        <span style={{ color: "#fff" }}>{booth.name}</span>
-                      }
+                      title={booth.name} // REMOVE <span style={{ color: "#fff" }}>
                       style={{
                         height: "100%",
-                        background: "#3f3f3f",
-                        borderColor: "#3f3f3f",
+                        // background: "#3f3f3f", // REMOVE
+                        // borderColor: "#3f3f3f", // REMOVE
+                        display: "flex",
+                        flexDirection: "column",
                       }}
-                      className="dark-card"
+                      bodyStyle={{
+                        flexGrow: 1,
+                        // color: "#b0b0b0", // REMOVE, let theme handle text color in card body
+                        paddingTop: 16,
+                        paddingBottom: 16,
+                      }}
                       actions={[
                         <Button
                           key="settings"
@@ -284,8 +300,8 @@ const HomePage: React.FC = () => {
                           onClick={() =>
                             navigate(`/booths/${booth.id}/settings`)
                           }
-                          block
-                          style={{ color: "#1890ff", borderColor: "#4f4f4f" }}
+                          type="text" // type="text" is good for actions
+                          // style={{ color: "#1890ff", fontSize: "14px" }} // color will be from theme for text buttons
                         >
                           Settings
                         </Button>,
@@ -295,8 +311,8 @@ const HomePage: React.FC = () => {
                           onClick={() =>
                             navigate(`/booths/${booth.id}/vouchers`)
                           }
-                          block
-                          style={{ color: "#1890ff", borderColor: "#4f4f4f" }}
+                          type="text"
+                          // style={{ color: "#1890ff", fontSize: "14px" }}
                         >
                           Vouchers
                         </Button>,
@@ -306,14 +322,16 @@ const HomePage: React.FC = () => {
                           onClick={() =>
                             navigate(`/booths/${booth.id}/backgrounds`)
                           }
-                          block
-                          style={{ color: "#1890ff", borderColor: "#4f4f4f" }}
+                          type="text"
+                          // style={{ color: "#1890ff", fontSize: "14px" }}
                         >
                           Backgrounds
                         </Button>,
                       ]}
                     >
-                      <Text style={{ color: "#b0b0b0" }}>
+                      <Text type="secondary">
+                        {" "}
+                        {/* Use Text with type="secondary" or rely on inherited card body color */}
                         Booth ID: {booth.id}
                       </Text>
                     </Card>
