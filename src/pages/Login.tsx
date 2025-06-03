@@ -18,7 +18,10 @@ export default function Login() {
         let errorMessage = "Unknown error occurred.";
 
         if (error.statusCode) {
-          if (error.statusCode === 401) {
+          if (
+            typeof error.statusCode === "number" &&
+            error.statusCode === 401
+          ) {
             errorMessage = "Invalid email or password.";
           } else {
             errorMessage = `Login failed with status code ${error.statusCode}.`;

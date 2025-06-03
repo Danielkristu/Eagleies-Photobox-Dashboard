@@ -25,6 +25,7 @@ import BoothVouchersPage from "./pages/BoothVouchersPage";
 import TransactionReportPage from "./pages/TransactionReportPage";
 import { firestoreDataProvider } from "./providers/firestore-data-provider"; // Assuming this is your Firestore Data Provider
 import ChatTransactionsPage from "./pages/ChatTransactionPage";
+import SignUpPage from "./pages/SignUpPage";
 
 function App() {
   return (
@@ -41,15 +42,15 @@ function App() {
                   // --- ADDED: firestoreDataProvider ---
                   dataProvider={firestoreDataProvider}
                   resources={[
-            {
-  name: "chat-transactions",
-  list: "/chat",
-  meta: {
-    label: "Transaction Report",
-  },
-}
-            // Other existing resources...
-          ]}
+                    {
+                      name: "chat-transactions",
+                      list: "/chat",
+                      meta: {
+                        label: "Transaction Report",
+                      },
+                    },
+                    // Other existing resources...
+                  ]}
                   options={{
                     syncWithLocation: true,
                     warnWhenUnsavedChanges: true,
@@ -61,6 +62,7 @@ function App() {
                     {/* Routes that should NOT use ThemedLayoutV2 (e.g., public pages) */}
                     <Route path="/login" element={<Login />} />
                     <Route path="/welcome" element={<WelcomePage />} />{" "}
+                    <Route path="/signup" element={<SignUpPage />} />
                     {/* If WelcomePage is public/doesn't need the main header */}
                     {/* Routes that SHOULD use ThemedLayoutV2 with CustomHeader */}
                     <Route

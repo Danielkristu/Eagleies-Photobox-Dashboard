@@ -1,10 +1,29 @@
-import { Table, Typography, Spin, Space, App as AntdApp, Select, DatePicker, Button } from "antd";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  ResponsiveContainer,
+} from "recharts";
+
+import {
+  Table,
+  Typography,
+  Spin,
+  Space,
+  App as AntdApp,
+  Select,
+  DatePicker,
+  Button,
+} from "antd";
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useGetIdentity } from "@refinedev/core";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { app } from "../firebase";
 import { fetchInvoicesFromXendit } from "../utils/xendit";
-import moment from "moment-timezone"; // Use moment-timezone
+import moment from "moment-timezone";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -28,7 +47,8 @@ interface XenditInvoice {
 }
 
 const ChatTransactionsPage: React.FC = () => {
-  const { data: userIdentity, isLoading: identityLoading } = useGetIdentity<UserIdentity>();
+  const { data: userIdentity, isLoading: identityLoading } =
+    useGetIdentity<UserIdentity>();
   const userId = userIdentity?.id;
 
   const { notification } = AntdApp.useApp();
@@ -38,29 +58,28 @@ const ChatTransactionsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [filteredInvoices, setFilteredInvoices] = useState<XenditInvoice[]>([]);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [dateRange, setDateRange] = useState<[moment.Moment, moment.Moment] | null>(null);
-  const [tempDateRange, setTempDateRange] = useState<[moment.Moment, moment.Moment] | null>(null); // Temporary state for date range
-  const isFetchingRef = useRef(false); // Prevent multiple fetch calls
+  const [dateRange, setDateRange] = useState<
+    [moment.Moment, moment.Moment] | null
+  >(null);
+  const [tempDateRange, setTempDateRange] = useState<
+    [moment.Moment, moment.Moment] | null
+  >(null);
+  const isFetchingRef = useRef(false);
 
   const fetchData = useCallback(async () => {
     if (!userId || isFetchingRef.current) {
-      console.log("Skipping fetchData: No userId or fetch in progress", { userId, isFetching: isFetchingRef.current });
       setLoading(false);
       return;
     }
 
-    console.log("Current userId:", userId); // Log userId to verify
     isFetchingRef.current = true;
     setLoading(true);
     setError(null);
 
     try {
       const invoices = await fetchInvoicesFromXendit(userId);
-      console.log("Raw API response:", invoices); // Log raw API response
       setInvoices(invoices);
-      setFilteredInvoices(invoices); // Initialize filtered invoices with all data
     } catch (err: unknown) {
-      console.error("Error fetching invoices:", err);
       let errorMessage = "Could not fetch transaction data.";
       if (err instanceof Error) {
         errorMessage = err.message;
@@ -82,7 +101,6 @@ const ChatTransactionsPage: React.FC = () => {
   useEffect(() => {
     const auth = getAuth(app);
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      console.log("Auth state changed:", user ? user.uid : "No user");
       if (user && userId && !isFetchingRef.current) {
         fetchData();
       }
@@ -91,40 +109,35 @@ const ChatTransactionsPage: React.FC = () => {
     return () => unsubscribe();
   }, [userId, fetchData]);
 
-  // Apply filters when status or date range changes
   useEffect(() => {
     let filtered = [...invoices];
-
-    console.log("Initial invoices count:", invoices.length); // Log initial data count
-    console.log("Initial invoices:", invoices); // Log initial data
 
     if (statusFilter) {
       filtered = filtered.filter((invoice) => invoice.status === statusFilter);
     }
 
-    if (dateRange) {
-      const [startDate, endDate] = dateRange.map(date => moment.tz(date, "Asia/Jakarta")); // Convert to moment-timezone
+    if (dateRange && dateRange[0] && dateRange[1]) {
+      const startOfDayInJakarta = dateRange[0]
+        .clone()
+        .tz("Asia/Jakarta")
+        .startOf("day");
+      const endOfDayInJakarta = dateRange[1]
+        .clone()
+        .tz("Asia/Jakarta")
+        .endOf("day");
+
       filtered = filtered.filter((invoice) => {
-        if (!invoice.paid_at) {
-          console.log("No paid_at for invoice:", invoice);
-          return false;
-        }
-        const invoiceDate = moment.tz(invoice.paid_at, "YYYY-MM-DDTHH:mm:ss.SSSZ", "Asia/Jakarta"); // Explicit UTC format
-        const startDateAdjusted = startDate.clone().startOf("day").utcOffset("+07:00"); // Ensure WIB start
-        const endDateAdjusted = endDate.clone().endOf("day").utcOffset("+07:00"); // Ensure WIB end
-        const isWithinRange = invoiceDate.isSameOrAfter(startDateAdjusted) && invoiceDate.isSameOrBefore(endDateAdjusted);
-        console.log(
-          "Raw paid_at:", invoice.paid_at,
-          "Parsed Invoice date:", invoiceDate.format(),
-          "Range:", startDateAdjusted.format(), "to", endDateAdjusted.format(),
-          "Within Range:", isWithinRange
+        if (!invoice.paid_at) return false;
+        const invoiceDateInJakarta = moment
+          .utc(invoice.paid_at)
+          .tz("Asia/Jakarta");
+        return (
+          invoiceDateInJakarta.isSameOrAfter(startOfDayInJakarta) &&
+          invoiceDateInJakarta.isSameOrBefore(endOfDayInJakarta)
         );
-        return isWithinRange;
       });
     }
 
-    console.log("Filtered invoices count:", filtered.length); // Log the number of filtered invoices
-    console.log("Filtered invoices:", filtered); // Log filtered data
     setFilteredInvoices(filtered);
   }, [statusFilter, dateRange, invoices]);
 
@@ -134,10 +147,15 @@ const ChatTransactionsPage: React.FC = () => {
 
   const handleApplyDateFilter = () => {
     if (tempDateRange && tempDateRange[0] && tempDateRange[1]) {
-      console.log("Applying date range:", tempDateRange.map(date => date.format()));
-      setDateRange(tempDateRange.map(date => moment.tz(date, "Asia/Jakarta"))); // Convert to moment-timezone
+      const start = moment(tempDateRange[0]).tz("Asia/Jakarta").startOf("day");
+      const end = moment(tempDateRange[1]).tz("Asia/Jakarta").endOf("day");
+
+      setDateRange([start, end]);
     } else {
-      notification.warning({ message: "Invalid Date Range", description: "Please select both start and end dates." });
+      notification.warning({
+        message: "Invalid Date Range",
+        description: "Please select both start and end dates.",
+      });
     }
   };
 
@@ -146,7 +164,9 @@ const ChatTransactionsPage: React.FC = () => {
     setDateRange(null);
   };
 
-  const uniqueStatuses = Array.from(new Set(invoices.map((invoice) => invoice.status)));
+  const uniqueStatuses = Array.from(
+    new Set(invoices.map((invoice) => invoice.status))
+  );
 
   const columns = [
     {
@@ -160,41 +180,31 @@ const ChatTransactionsPage: React.FC = () => {
       dataIndex: "amount",
       key: "amount",
       render: (amount: number, record: XenditInvoice) => (
-        <Text strong>Rp {amount ? amount.toLocaleString("id-ID") : "0"} {record.currency || "N/A"}</Text>
+        <Text strong>
+          Rp {amount ? amount.toLocaleString("id-ID") : "0"}{" "}
+          {record.currency || "N/A"}
+        </Text>
       ),
     },
     {
       title: "Status",
       dataIndex: "status",
       key: "status",
-      render: (value: string | undefined) => value || "N/A",
-      filterDropdown: ({ setSelectedKeys, selectedKeys, confirm }) => (
-        <div style={{ padding: 8 }}>
-          <Select
-            value={selectedKeys[0] || "all"}
-            onChange={(value) => setSelectedKeys(value ? [value] : [])}
-            onBlur={confirm}
-            style={{ width: 200, marginBottom: 8, display: "block" }}
-            placeholder="Filter by status"
-            allowClear
-          >
-            <Option value="all">All</Option>
-            {uniqueStatuses.map((status) => (
-              <Option key={status} value={status}>
-                {status}
-              </Option>
-            ))}
-          </Select>
-        </div>
-      ),
-      onFilter: (value: string, record: XenditInvoice) => value === "all" || record.status === value,
+      filters: uniqueStatuses.map((status) => ({
+        text: status,
+        value: status,
+      })),
+      onFilter: (value, record) => record.status === value,
     },
+
     {
       title: "Paid At",
       dataIndex: "paid_at",
       key: "paid_at",
       render: (paid_at: string | undefined) =>
-        paid_at ? moment.tz(paid_at, "YYYY-MM-DDTHH:mm:ss.SSSZ", "Asia/Jakarta").format("DD MMM YYYY HH:mm") : "N/A",
+        paid_at
+          ? moment.utc(paid_at).tz("Asia/Jakarta").format("DD MMM YYYY HH:mm")
+          : "N/A",
     },
     {
       title: "Description",
@@ -204,57 +214,125 @@ const ChatTransactionsPage: React.FC = () => {
     },
   ];
 
+  const paidInvoicesByDate = filteredInvoices
+    .filter((inv) => inv.status === "PAID" && inv.paid_at)
+    .reduce<Record<string, number>>((acc, inv) => {
+      const dateKey = moment
+        .utc(inv.paid_at)
+        .tz("Asia/Jakarta")
+        .format("YYYY-MM-DD");
+      acc[dateKey] = (acc[dateKey] || 0) + 1;
+      return acc;
+    }, {});
+
+  const chartData = Object.entries(paidInvoicesByDate).map(([date, count]) => ({
+    date,
+    transactions: count,
+  }));
+
   if (identityLoading) {
-    return <Spin size="large" style={{ display: "block", textAlign: "center", marginTop: "20vh" }} />;
+    return (
+      <Spin
+        size="large"
+        style={{ display: "block", textAlign: "center", marginTop: "20vh" }}
+      />
+    );
   }
 
   return (
-    <Space direction="vertical" size="large" style={{ width: "100%", padding: "20px" }}>
+    <Space
+      direction="vertical"
+      size="large"
+      style={{ width: "100%", padding: "20px" }}
+    >
       <Title level={3}>Chat Transactions</Title>
       <Space direction="horizontal" size="middle">
         <Text>Filter by Date Range:</Text>
         <RangePicker
           value={tempDateRange}
-          onChange={(dates) => setTempDateRange(dates as [moment.Moment, moment.Moment] | null)}
+          onChange={(dates) =>
+            setTempDateRange(dates as [moment.Moment, moment.Moment] | null)
+          }
           style={{ width: 250 }}
           placeholder={["Start Date", "End Date"]}
           presets={[
             {
               label: "Today",
-              value: () => [moment.tz("Asia/Jakarta"), moment.tz("Asia/Jakarta")],
+              value: [
+                moment.tz("Asia/Jakarta").startOf("day"),
+                moment.tz("Asia/Jakarta").endOf("day"),
+              ],
             },
             {
               label: "Last 7 Days",
-              value: () => [moment.tz("Asia/Jakarta").subtract(7, "days"), moment.tz("Asia/Jakarta")],
+              value: [
+                moment.tz("Asia/Jakarta").subtract(6, "days").startOf("day"),
+                moment.tz("Asia/Jakarta").endOf("day"),
+              ],
             },
             {
               label: "This Month",
-              value: () => [moment.tz("Asia/Jakarta").startOf("month"), moment.tz("Asia/Jakarta").endOf("month")],
+              value: [
+                moment.tz("Asia/Jakarta").startOf("month"),
+                moment.tz("Asia/Jakarta").endOf("month"),
+              ],
             },
           ]}
         />
         <Button type="primary" onClick={handleApplyDateFilter}>
           Apply Date Filter
         </Button>
-        <Button onClick={handleClearDateFilter}>
-          Clear Date Filter
-        </Button>
+        <Button onClick={handleClearDateFilter}>Clear Date Filter</Button>
       </Space>
+      <Space>
+        <Text>Filter by Status:</Text>
+        <Select
+          value={statusFilter || "all"}
+          onChange={(value) => setStatusFilter(value === "all" ? null : value)}
+          style={{ width: 200 }}
+          placeholder="Select status"
+          allowClear
+        >
+          <Option value="all">All</Option>
+          {uniqueStatuses.map((status) => (
+            <Option key={status} value={status}>
+              {status}
+            </Option>
+          ))}
+        </Select>
+      </Space>
+
       {loading ? (
         <Spin size="large" style={{ display: "block", textAlign: "center" }} />
       ) : error ? (
         <Text type="danger">Error: {error}</Text>
       ) : filteredInvoices.length === 0 ? (
-        <Text type="secondary">No invoices to display.</Text>
+        <Text type="secondary">
+          No invoices to display for the selected filters.
+        </Text>
       ) : (
-        <Table
-          dataSource={filteredInvoices}
-          columns={columns}
-          rowKey="id"
-          pagination={{ pageSize: 10 }}
-          scroll={{ x: true }}
-          key={dateRange?.toString()} // Force re-render on date range change
-        />
+        <>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart
+              data={chartData}
+              margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="transactions" fill="#1890ff" />
+            </BarChart>
+          </ResponsiveContainer>
+
+          <Table
+            dataSource={filteredInvoices}
+            columns={columns}
+            rowKey="id"
+            pagination={{ pageSize: 10 }}
+            scroll={{ x: true }}
+          />
+        </>
       )}
     </Space>
   );

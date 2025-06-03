@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// src/pages/HomePage.tsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -23,10 +22,9 @@ import {
 } from "@ant-design/icons";
 import { useGetIdentity } from "@refinedev/core";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "../firebase"; // Ensure this path is correct
-import { fetchTotalRevenueFromXendit } from "../utils/xendit"; // Ensure this path is correct
-
-// Header component is assumed to be handled by the main layout (e.g., ThemedLayoutV2 in App.tsx)
+import { db, app } from "../firebase";
+import { fetchTotalRevenueFromXendit } from "../utils/xendit";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 const { Title, Text } = Typography;
 
@@ -54,6 +52,20 @@ const HomePage: React.FC = () => {
   const [errorBooths, setErrorBooths] = useState<string | null>(null);
   const [errorRevenue, setErrorRevenue] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState<boolean>(true);
+
+  // ✅ Firebase auth check
+  useEffect(() => {
+    const auth = getAuth(app);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        navigate("/login"); // ⬅️ redirect jika belum login
+      } else {
+        setAuthLoading(false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [navigate]);
 
   const fetchBoothsData = async (currentUserId: string) => {
     setLoadingBooths(true);
@@ -101,13 +113,10 @@ const HomePage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!userIdentity || !userIdentity.id) {
-      setAuthLoading(true);
-      return;
+    if (userIdentity?.id) {
+      fetchBoothsData(userIdentity.id);
+      fetchRevenueData(userIdentity.id);
     }
-    setAuthLoading(false);
-    fetchBoothsData(userIdentity.id);
-    fetchRevenueData(userIdentity.id);
   }, [userIdentity]);
 
   const formatRupiah = (amount: number) =>
@@ -123,41 +132,30 @@ const HomePage: React.FC = () => {
         style={{
           padding: 24,
           textAlign: "center",
-          // background: "#202223", // REMOVE: Rely on layout background
-          minHeight: "100vh", // Can keep for full height before content loads
+          minHeight: "100vh",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
         }}
       >
-        <Spin tip="Loading user data..." />{" "}
-        {/* Spin color will be from theme */}
+        <Spin tip="Loading user session..." />
       </div>
     );
   }
 
   return (
-    // REMOVE explicit background, rely on layout for overall background
-    // Keep padding for content spacing
-    <div
-      style={{
-        padding: 24 /* minHeight: "100vh" // Usually not needed if layout handles height */,
-      }}
-    >
+    <div style={{ padding: 24 }}>
       <Title level={2} style={{ marginBottom: 24 }}>
-        {" "}
-        {/* REMOVE color: "#fff" */}
-        Welcome, User CLient
+        Welcome, User Client
       </Title>
 
       <Row gutter={[24, 24]}>
-        {/* Total Revenue */}
         <Col xs={24} sm={12} md={8}>
           <Card
-            title="Total Pendapatan" // REMOVE <span style={{ color: "#fff" }}>
+            title="Total Pendapatan"
             bordered={false}
-            extra={<DollarOutlined />} // REMOVE style={{ color: "#fff" }}
-            style={{ textAlign: "center" /* REMOVE background: "#2f2f2f" */ }}
+            extra={<DollarOutlined />}
+            style={{ textAlign: "center" }}
           >
             {loadingRevenue ? (
               <Skeleton.Input
@@ -166,39 +164,31 @@ const HomePage: React.FC = () => {
               />
             ) : errorRevenue ? (
               <>
-                <Text type="danger">
-                  {" "}
-                  {/* style={{ color: "#ff4d4f" }} is default for type="danger" */}
-                  Failed to load
-                </Text>
+                <Text type="danger">Failed to load</Text>
                 <br />
                 <Button
                   type="link"
                   onClick={() =>
                     userIdentity?.id && fetchRevenueData(userIdentity.id)
                   }
-                  // style={{ padding: 0, color: "#1890ff" }} // type="link" usually gets themed color
                 >
                   Retry
                 </Button>
               </>
             ) : (
               <Title level={3} style={{ margin: 0 }}>
-                {" "}
-                {/* REMOVE color: "#fff" */}
                 {formatRupiah(totalRevenue || 0)}
               </Title>
             )}
           </Card>
         </Col>
 
-        {/* Booth Count */}
         <Col xs={24} sm={12} md={8}>
           <Card
-            title="Jumlah Booth" // REMOVE <span style={{ color: "#fff" }}>
+            title="Jumlah Booth"
             bordered={false}
-            extra={<AppstoreAddOutlined />} // REMOVE style={{ color: "#fff" }}
-            style={{ textAlign: "center" /* REMOVE background: "#2f2f2f" */ }}
+            extra={<AppstoreAddOutlined />}
+            style={{ textAlign: "center" }}
           >
             {loadingBooths ? (
               <Skeleton.Input
@@ -214,15 +204,12 @@ const HomePage: React.FC = () => {
                   onClick={() =>
                     userIdentity?.id && fetchBoothsData(userIdentity.id)
                   }
-                  // style={{ padding: 0, color: "#1890ff" }}
                 >
                   Retry
                 </Button>
               </>
             ) : (
               <Title level={3} style={{ margin: 0 }}>
-                {" "}
-                {/* REMOVE color: "#fff" */}
                 {booths.length}
               </Title>
             )}
@@ -231,21 +218,12 @@ const HomePage: React.FC = () => {
       </Row>
 
       <Row gutter={[24, 24]} style={{ marginTop: 24 }}>
-        {/* Your Booths */}
         <Col xs={24}>
-          <Card
-            title="Your Booths" // REMOVE <span style={{ color: "#fff" }}>
-            bordered={false}
-            extra={<TeamOutlined />} // REMOVE style={{ color: "#fff" }}
-            // style={{ background: "#2f2f2f" }} // REMOVE
-          >
+          <Card title="Your Booths" bordered={false} extra={<TeamOutlined />}>
             {loadingBooths ? (
               <Row gutter={[16, 16]}>
                 {[...Array(booths.length > 0 ? booths.length : 2)].map(
-                  (
-                    _,
-                    index // Show 2 skeletons if no booths yet
-                  ) => (
+                  (_, index) => (
                     <Col xs={24} sm={12} md={8} lg={6} key={index}>
                       <Skeleton active paragraph={{ rows: 3 }} />
                     </Col>
@@ -258,8 +236,7 @@ const HomePage: React.FC = () => {
                   description={
                     <Text type="secondary">Failed to load booths</Text>
                   }
-                />{" "}
-                {/* Use Text type="secondary" or rely on Empty's theme */}
+                />
                 <Button
                   type="primary"
                   onClick={() =>
@@ -277,20 +254,17 @@ const HomePage: React.FC = () => {
             ) : (
               <Row gutter={[16, 16]}>
                 {booths.map((booth) => (
-                  <Col xs={24} sm={12} md={8} lg={6} key={booth.id}>
+                  <Col xs={24} sm={24} md={24} lg={12} key={booth.id}>
                     <Card
                       hoverable
-                      title={booth.name} // REMOVE <span style={{ color: "#fff" }}>
+                      title={booth.name}
                       style={{
                         height: "100%",
-                        // background: "#3f3f3f", // REMOVE
-                        // borderColor: "#3f3f3f", // REMOVE
                         display: "flex",
                         flexDirection: "column",
                       }}
                       bodyStyle={{
                         flexGrow: 1,
-                        // color: "#b0b0b0", // REMOVE, let theme handle text color in card body
                         paddingTop: 16,
                         paddingBottom: 16,
                       }}
@@ -301,8 +275,7 @@ const HomePage: React.FC = () => {
                           onClick={() =>
                             navigate(`/booths/${booth.id}/settings`)
                           }
-                          type="text" // type="text" is good for actions
-                          // style={{ color: "#1890ff", fontSize: "14px" }} // color will be from theme for text buttons
+                          type="text"
                         >
                           Settings
                         </Button>,
@@ -313,7 +286,6 @@ const HomePage: React.FC = () => {
                             navigate(`/booths/${booth.id}/vouchers`)
                           }
                           type="text"
-                          // style={{ color: "#1890ff", fontSize: "14px" }}
                         >
                           Vouchers
                         </Button>,
@@ -324,17 +296,12 @@ const HomePage: React.FC = () => {
                             navigate(`/booths/${booth.id}/backgrounds`)
                           }
                           type="text"
-                          // style={{ color: "#1890ff", fontSize: "14px" }}
                         >
                           Backgrounds
                         </Button>,
                       ]}
                     >
-                      <Text type="secondary">
-                        {" "}
-                        {/* Use Text with type="secondary" or rely on inherited card body color */}
-                        Booth ID: {booth.id}
-                      </Text>
+                      <Text type="secondary">Booth ID: {booth.id}</Text>
                     </Card>
                   </Col>
                 ))}
