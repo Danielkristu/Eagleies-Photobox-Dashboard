@@ -97,7 +97,7 @@ const AccountSettingsPage: React.FC = () => {
       }
 
       // Fetch Xendit API Key from clients collection
-      const clientRef = doc(db, "clients", userId);
+      const clientRef = doc(db, "Clients", userId);
       const clientSnap = await getDoc(clientRef);
       if (clientSnap.exists()) {
         const clientData = clientSnap.data();
