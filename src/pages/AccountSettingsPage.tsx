@@ -17,14 +17,13 @@ import {
   Upload,
   Row,
   Col,
-  Avatar, // Using Ant Design Avatar for placeholder consistency
+  Avatar,
 } from "antd";
 import {
   ArrowLeftOutlined,
   UploadOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-// import Header from "../components/Header"; // REMOVE if handled by layout
 
 const { Title } = Typography;
 
@@ -40,21 +39,21 @@ interface UserIdentity {
 const AccountSettingsPage: React.FC = () => {
   const navigate = useNavigate();
   const { data: userIdentity, isLoading: identityLoading } =
-    useGetIdentity<UserIdentity>(); // Renamed isLoading to avoid conflict
+    useGetIdentity<UserIdentity>();
   const userId = userIdentity?.id;
 
   const [form] = Form.useForm();
-  const [fetchingData, setFetchingData] = useState<boolean>(true); // For initial data fetch
+  const [xenditForm] = Form.useForm(); // Form for Xendit API Key
+  const [fetchingData, setFetchingData] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
+  const [savingXenditKey, setSavingXenditKey] = useState<boolean>(false); // Separate loading state for Xendit save
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(
     null
   );
-  // const [phoneNumber, setPhoneNumber] = useState<string>(""); // phoneNumber will be handled by form
+  const [xenditApiKey, setXenditApiKey] = useState<string | null>(null); // State to hold Xendit API Key
 
   useEffect(() => {
     if (!userIdentity && !identityLoading) {
-      // User not logged in or identity failed to load, redirect
-      // navigate("/login"); // Or appropriate page
       return;
     }
   }, [userIdentity, identityLoading, navigate]);
@@ -70,8 +69,8 @@ const AccountSettingsPage: React.FC = () => {
         const rawData = userSnap.data();
         const userData = {
           id: userId,
-          email: rawData.email || userIdentity?.email || "", // Fallback to identity email
-          name: rawData.name || userIdentity?.name || "", // Fallback to identity name
+          email: rawData.email || userIdentity?.email || "",
+          name: rawData.name || userIdentity?.name || "",
           role: rawData.role || "client",
           profilePictureUrl: rawData.profilePictureUrl || undefined,
           phoneNumber: rawData.phoneNumber || "",
@@ -84,11 +83,10 @@ const AccountSettingsPage: React.FC = () => {
         });
         setProfilePictureUrl(userData.profilePictureUrl || null);
       } else {
-        // User document doesn't exist, prefill with identity data if available
         form.setFieldsValue({
           name: userIdentity?.name || "",
           email: userIdentity?.email || "",
-          role: "client", // Default role
+          role: "client",
           phoneNumber: "",
         });
         setProfilePictureUrl(userIdentity?.profilePictureUrl || null);
@@ -96,6 +94,19 @@ const AccountSettingsPage: React.FC = () => {
           message: "New User Profile",
           description: "Please complete your account details.",
         });
+      }
+
+      // Fetch Xendit API Key from clients collection
+      const clientRef = doc(db, "clients", userId);
+      const clientSnap = await getDoc(clientRef);
+      if (clientSnap.exists()) {
+        const clientData = clientSnap.data();
+        const apiKey = clientData.xendit_api_key || "";
+        xenditForm.setFieldsValue({ xenditApiKey: apiKey });
+        setXenditApiKey(apiKey);
+      } else {
+        xenditForm.setFieldsValue({ xenditApiKey: "" });
+        setXenditApiKey("");
       }
     } catch (error: any) {
       notification.error({
@@ -109,7 +120,7 @@ const AccountSettingsPage: React.FC = () => {
 
   const handleSave = async (values: {
     name: string;
-    email: string; // Email is usually not changed by user here, but kept for structure
+    email: string;
     role?: string;
     phoneNumber?: string;
   }) => {
@@ -119,10 +130,8 @@ const AccountSettingsPage: React.FC = () => {
       const userRef = doc(db, "users", userId);
       await updateDoc(userRef, {
         name: values.name,
-        profilePictureUrl: profilePictureUrl || "", // Ensure this is the latest URL if changed
+        profilePictureUrl: profilePictureUrl || "",
         phoneNumber: values.phoneNumber || "",
-        // email: values.email, // Typically email is not updated here directly
-        // role: values.role, // Role might be admin-controlled
       });
       notification.success({
         message: "Success",
@@ -138,20 +147,42 @@ const AccountSettingsPage: React.FC = () => {
     }
   };
 
-  const handleUpload = async (file: File) => {
-    if (!userId) return false; // Return false to prevent Upload component's default action
-
-    const storageRef = ref(storage, `profilePictures/${userId}/${file.name}`); // Corrected path segment
+  const handleSaveXenditKey = async (values: { xenditApiKey: string }) => {
+    if (!userId) return;
+    setSavingXenditKey(true);
     try {
-      setSaving(true); // Indicate loading state during upload
+      const clientRef = doc(db, "clients", userId);
+      await updateDoc(clientRef, {
+        xendit_api_key: values.xenditApiKey || "",
+      });
+      setXenditApiKey(values.xenditApiKey);
+      notification.success({
+        message: "Success",
+        description: "Xendit API Key updated successfully.",
+      });
+    } catch (error: any) {
+      notification.error({
+        message: "Error saving Xendit API Key",
+        description: error.message || "An error occurred.",
+      });
+    } finally {
+      setSavingXenditKey(false);
+    }
+  };
+
+  const handleUpload = async (file: File) => {
+    if (!userId) return false;
+
+    const storageRef = ref(storage, `profilePictures/${userId}/${file.name}`);
+    try {
+      setSaving(true);
       await uploadBytes(storageRef, file);
       const imageUrl = await getDownloadURL(storageRef);
 
-      // Update Firestore immediately with the new URL
       const userRef = doc(db, "users", userId);
       await updateDoc(userRef, { profilePictureUrl: imageUrl });
 
-      setProfilePictureUrl(imageUrl); // Update local state for UI (though onSnapshot will also catch this)
+      setProfilePictureUrl(imageUrl);
       notification.success({
         message: "Success",
         description: "Profile picture uploaded successfully.",
@@ -164,27 +195,29 @@ const AccountSettingsPage: React.FC = () => {
     } finally {
       setSaving(false);
     }
-    return false; // Important to prevent default upload behavior
+    return false;
   };
 
   useEffect(() => {
     if (userId) {
-      fetchUserData(); // Initial fetch
+      fetchUserData();
 
-      // Real-time listener for profile picture and other potential changes from elsewhere
+      // Real-time listener for user data
       const userRef = doc(db, "users", userId);
-      const unsubscribe = onSnapshot(
+      const unsubscribeUser = onSnapshot(
         userRef,
         (docSnap) => {
           if (docSnap.exists()) {
             const data = docSnap.data();
             setProfilePictureUrl(data.profilePictureUrl || null);
-            // Optionally update other form fields if they can be changed externally
-            // form.setFieldsValue({ name: data.name, phoneNumber: data.phoneNumber });
+            form.setFieldsValue({
+              name: data.name,
+              phoneNumber: data.phoneNumber,
+            });
           }
         },
         (error) => {
-          console.error("Error with Firestore onSnapshot:", error);
+          console.error("Error with Firestore onSnapshot (users):", error);
           notification.error({
             message: "Real-time sync error",
             description: "Could not sync account updates.",
@@ -192,9 +225,33 @@ const AccountSettingsPage: React.FC = () => {
         }
       );
 
-      return () => unsubscribe(); // Cleanup listener
+      // Real-time listener for client data (Xendit API Key)
+      const clientRef = doc(db, "clients", userId);
+      const unsubscribeClient = onSnapshot(
+        clientRef,
+        (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            const apiKey = data.xendit_api_key || "";
+            xenditForm.setFieldsValue({ xenditApiKey: apiKey });
+            setXenditApiKey(apiKey);
+          }
+        },
+        (error) => {
+          console.error("Error with Firestore onSnapshot (clients):", error);
+          notification.error({
+            message: "Real-time sync error",
+            description: "Could not sync Xendit API Key.",
+          });
+        }
+      );
+
+      return () => {
+        unsubscribeUser();
+        unsubscribeClient();
+      };
     }
-  }, [userId]); // form removed from deps, fetchUserData will set it.
+  }, [userId]);
 
   if (identityLoading || fetchingData) {
     return (
@@ -202,116 +259,102 @@ const AccountSettingsPage: React.FC = () => {
         style={{
           padding: 24,
           textAlign: "center",
-          // background: "#3f3f3f", // REMOVE
           minHeight: "100vh",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
         }}
       >
-        <Spin size="large" tip="Loading account details..." />{" "}
-        {/* REMOVE style={{ color: "#fff" }} */}
+        <Spin size="large" tip="Loading account details..." />
       </div>
     );
   }
 
   return (
-    <div
-      style={{
-        padding: 24 /* REMOVE background, minHeight if layout manages it */,
-      }}
-    >
-      {/* <Header /> REMOVE if handled by layout */}
+    <div style={{ padding: 24 }}>
       <Button
         icon={<ArrowLeftOutlined />}
-        onClick={() => navigate("/")} // Navigate to dashboard or previous page
+        onClick={() => navigate("/")}
         style={{ marginBottom: 16 }}
-        // REMOVE custom background/border/color
       >
-        Back {/* Or "Back to Dashboard" */}
+        Back
       </Button>
-      <Title level={2} /* REMOVE style={{ color: "#fff" }} */>
-        Account Settings
-      </Title>
-      <Card
-        style={{
-          marginTop: 16 /* REMOVE background, border, borderRadius if theme handles card style */,
-        }}
-        // REMOVE className="dark-card"
-      >
+      <Title level={2}>Account Settings</Title>
+      <Card style={{ marginTop: 16 }}>
         <Row gutter={[32, 24]}>
-          {" "}
-          {/* Increased gutter for more spacing */}
-          {/* Left Column: Form Fields */}
           <Col xs={24} md={12}>
             <Form form={form} layout="vertical" onFinish={handleSave}>
               <Form.Item
-                label="Name" // REMOVE <span style={{ color: "#fff" }}>
+                label="Name"
                 name="name"
                 rules={[{ required: true, message: "Please enter your name" }]}
               >
-                <Input
-                  placeholder="Enter your name" /* REMOVE custom styles */
-                />
+                <Input placeholder="Enter your name" />
               </Form.Item>
               <Form.Item label="Email" name="email">
-                <Input
-                  disabled /* REMOVE custom styles, antd theme handles disabled */
-                />
+                <Input disabled />
               </Form.Item>
               <Form.Item label="Role" name="role">
-                <Input disabled /* REMOVE custom styles */ />
+                <Input disabled />
               </Form.Item>
               <Form.Item label="Phone Number" name="phoneNumber">
-                <Input
-                  placeholder="Enter your phone number" /* REMOVE custom styles */
-                />
+                <Input placeholder="Enter your phone number" />
               </Form.Item>
               <Form.Item>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  loading={saving} /* REMOVE custom styles */
-                >
+                <Button type="primary" htmlType="submit" loading={saving}>
                   Save Changes
                 </Button>
               </Form.Item>
             </Form>
           </Col>
-          {/* Right Column: Profile Picture */}
           <Col xs={24} md={12}>
             <div style={{ textAlign: "center", paddingTop: "20px" }}>
-              {" "}
-              {/* Added padding top */}
-              <Avatar // Using Ant Design Avatar for better theming and placeholder
-                size={200} // Larger size
+              <Avatar
+                size={200}
                 src={profilePictureUrl}
-                icon={!profilePictureUrl && <UserOutlined />} // Show icon if no URL
+                icon={!profilePictureUrl && <UserOutlined />}
                 style={{
                   marginBottom: 24,
-                  border:
-                    "2px solid #f0f0f0" /* Optional: a subtle border from theme */,
+                  border: "2px solid #f0f0f0",
                 }}
-                // REMOVE custom background for placeholder div
               />
               <div>
                 <Upload
                   beforeUpload={handleUpload}
                   showUploadList={false}
-                  accept="image/png, image/jpeg, image/gif" // Specify accepted file types
+                  accept="image/png, image/jpeg, image/gif"
                 >
-                  <Button
-                    icon={
-                      <UploadOutlined />
-                    } /* REMOVE custom styles, type="primary" or default */
-                  >
-                    Change Picture
-                  </Button>
+                  <Button icon={<UploadOutlined />}>Change Picture</Button>
                 </Upload>
               </div>
             </div>
           </Col>
         </Row>
+      </Card>
+
+      {/* Xendit API Key Settings */}
+      <Card style={{ marginTop: 24 }}>
+        <Title level={4}>Xendit API Key Settings</Title>
+        <Form
+          form={xenditForm}
+          layout="vertical"
+          onFinish={handleSaveXenditKey}
+        >
+          <Form.Item
+            label="Xendit API Key"
+            name="xenditApiKey"
+            rules={[
+              { required: true, message: "Please enter your Xendit API Key" },
+            ]}
+          >
+            <Input placeholder="Enter your Xendit API Key" />
+          </Form.Item>
+          <Form.Item>
+            <Button type="primary" htmlType="submit" loading={savingXenditKey}>
+              Save Xendit API Key
+            </Button>
+          </Form.Item>
+        </Form>
       </Card>
     </div>
   );
