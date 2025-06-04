@@ -151,7 +151,7 @@ const AccountSettingsPage: React.FC = () => {
     if (!userId) return;
     setSavingXenditKey(true);
     try {
-      const clientRef = doc(db, "clients", userId);
+      const clientRef = doc(db, "Clients", userId);
       await updateDoc(clientRef, {
         xendit_api_key: values.xenditApiKey || "",
       });
@@ -226,7 +226,7 @@ const AccountSettingsPage: React.FC = () => {
       );
 
       // Real-time listener for client data (Xendit API Key)
-      const clientRef = doc(db, "clients", userId);
+      const clientRef = doc(db, "Clients", userId);
       const unsubscribeClient = onSnapshot(
         clientRef,
         (docSnap) => {
@@ -238,7 +238,7 @@ const AccountSettingsPage: React.FC = () => {
           }
         },
         (error) => {
-          console.error("Error with Firestore onSnapshot (clients):", error);
+          console.error("Error with Firestore onSnapshot Clients):", error);
           notification.error({
             message: "Real-time sync error",
             description: "Could not sync Xendit API Key.",
