@@ -3,44 +3,21 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useGetIdentity } from "@refinedev/core";
+import { doc, getDoc, updateDoc, onSnapshot } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db, storage } from "../firebase";
 import {
-  collection,
-  getDocs,
-  doc,
-  setDoc,
-  updateDoc,
-  deleteDoc,
-} from "firebase/firestore";
-import { db } from "../firebase";
-import {
-  Table,
-  Button,
-  Modal,
-  Form,
-  Input,
-  Switch,
   Card,
+  Button,
   Typography,
   notification,
   Spin,
-  Popconfirm,
+  Upload,
+  Avatar,
 } from "antd";
-import {
-  ArrowLeftOutlined,
-  PlusOutlined,
-  DeleteOutlined,
-  EditOutlined,
-} from "@ant-design/icons";
+import { ArrowLeftOutlined, UploadOutlined } from "@ant-design/icons";
 
-const { Title, Text } = Typography;
-
-interface Background {
-  id: string;
-  name: string;
-  url: string;
-  is_active: boolean;
-  created_at: { seconds: number; nanoseconds: number };
-}
+const { Title, Text: TypographyText } = Typography;
 
 interface UserIdentity {
   id: string;
@@ -48,39 +25,65 @@ interface UserIdentity {
   name: string;
 }
 
+interface Background {
+  url: string;
+  is_active: boolean;
+}
+
 const BoothBackgroundsPage: React.FC = () => {
   const { boothId } = useParams<{ boothId: string }>();
   const navigate = useNavigate();
-  const { data: userIdentity } = useGetIdentity<UserIdentity>();
+  const { data: userIdentity, isLoading: identityLoading } =
+    useGetIdentity<UserIdentity>();
   const userId = userIdentity?.id;
 
-  const [backgrounds, setBackgrounds] = useState<Background[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
-  const [isEditModalVisible, setIsEditModalVisible] = useState<boolean>(false);
-  const [selectedBackground, setSelectedBackground] =
-    useState<Background | null>(null);
-  const [form] = Form.useForm();
+  const [homeBgUrl, setHomeBgUrl] = useState<string | null>(null);
+  const [startBgUrl, setStartBgUrl] = useState<string | null>(null);
+  const [voucherBgUrl, setVoucherBgUrl] = useState<string | null>(null);
+  const [succeedBgUrl, setSucceedBgUrl] = useState<string | null>(null);
+  const [qrisBgUrl, setQrisBgUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!identityLoading) {
+      if (!userIdentity) {
+        console.log("User not authenticated, redirecting to login...");
+        navigate("/login");
+        notification.warning({
+          message: "Authentication Required",
+          description: "Please log in to access this page.",
+        });
+      } else {
+        console.log("Authenticated User ID:", userId);
+        console.log("Booth ID:", boothId);
+      }
+    }
+  }, [userIdentity, identityLoading, navigate]);
 
   const fetchBackgrounds = async () => {
     if (!userId || !boothId) return;
     setLoading(true);
     try {
-      const backgroundsRef = collection(
-        db,
-        "Clients",
-        userId,
-        "Booths",
-        boothId,
-        "backgrounds"
+      const backgroundsRef = (type: string) =>
+        doc(db, "Clients", userId, "Booths", boothId, "backgrounds", type);
+      const [homeSnap, startSnap, voucherSnap, succeedSnap, qrisSnap] =
+        await Promise.all([
+          getDoc(backgroundsRef("homeBg")),
+          getDoc(backgroundsRef("startBg")),
+          getDoc(backgroundsRef("voucherBg")),
+          getDoc(backgroundsRef("succeedBg")),
+          getDoc(backgroundsRef("qrisBg")),
+        ]);
+
+      setHomeBgUrl(homeSnap.exists() ? homeSnap.data()?.url || null : null);
+      setStartBgUrl(startSnap.exists() ? startSnap.data()?.url || null : null);
+      setVoucherBgUrl(
+        voucherSnap.exists() ? voucherSnap.data()?.url || null : null
       );
-      const snapshot = await getDocs(backgroundsRef);
-      const backgroundData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Background[];
-      console.log("Fetched backgrounds:", backgroundData);
-      setBackgrounds(backgroundData);
+      setSucceedBgUrl(
+        succeedSnap.exists() ? succeedSnap.data()?.url || null : null
+      );
+      setQrisBgUrl(qrisSnap.exists() ? qrisSnap.data()?.url || null : null);
     } catch (error: any) {
       notification.error({
         message: "Error fetching backgrounds",
@@ -92,10 +95,17 @@ const BoothBackgroundsPage: React.FC = () => {
     }
   };
 
-  const handleAddBackground = async (values: any) => {
-    if (!userId || !boothId) return;
+  const handleUploadHomeBg = async (file: File) => {
+    if (!userId || !boothId) return false;
+    const storageRef = ref(
+      storage,
+      `backgrounds/${userId}/${boothId}/homeBg/${file.name}`
+    );
     try {
-      const backgroundId = Date.now().toString();
+      setLoading(true);
+      console.log("Attempting to upload to:", storageRef.fullPath); // Debug log
+      await uploadBytes(storageRef, file);
+      const imageUrl = await getDownloadURL(storageRef);
       const backgroundRef = doc(
         db,
         "Clients",
@@ -103,33 +113,40 @@ const BoothBackgroundsPage: React.FC = () => {
         "Booths",
         boothId,
         "backgrounds",
-        backgroundId
+        "homeBg"
       );
-      await setDoc(backgroundRef, {
-        name: values.name,
-        url: values.url,
-        is_active: values.is_active,
-        created_at: { seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 },
-      });
+      await updateDoc(
+        backgroundRef,
+        { url: imageUrl, is_active: true },
+        { merge: true }
+      );
+      setHomeBgUrl(imageUrl);
       notification.success({
         message: "Success",
-        description: "Background added successfully.",
+        description: "Home background uploaded successfully.",
       });
-      setIsModalVisible(false);
-      form.resetFields();
-      fetchBackgrounds();
     } catch (error: any) {
+      console.error("Upload error:", error); // Debug log
       notification.error({
-        message: "Error adding background",
-        description:
-          error.message || "An error occurred while adding the background.",
+        message: "Error uploading Home background",
+        description: error.message || "An error occurred.",
       });
+    } finally {
+      setLoading(false);
     }
+    return false;
   };
 
-  const handleEditBackground = async (values: any) => {
-    if (!userId || !boothId || !selectedBackground) return;
+  const handleUploadStartBg = async (file: File) => {
+    if (!userId || !boothId) return false;
+    const storageRef = ref(
+      storage,
+      `backgrounds/${userId}/${boothId}/startBg/${file.name}`
+    );
     try {
+      setLoading(true);
+      await uploadBytes(storageRef, file);
+      const imageUrl = await getDownloadURL(storageRef);
       const backgroundRef = doc(
         db,
         "Clients",
@@ -137,31 +154,39 @@ const BoothBackgroundsPage: React.FC = () => {
         "Booths",
         boothId,
         "backgrounds",
-        selectedBackground.id
+        "startBg"
       );
-      await updateDoc(backgroundRef, {
-        name: values.name,
-        url: values.url,
-        is_active: values.is_active,
-      });
+      await updateDoc(
+        backgroundRef,
+        { url: imageUrl, is_active: true },
+        { merge: true }
+      );
+      setStartBgUrl(imageUrl);
       notification.success({
         message: "Success",
-        description: "Background updated successfully.",
+        description: "Start background uploaded successfully.",
       });
-      setIsEditModalVisible(false);
-      fetchBackgrounds();
     } catch (error: any) {
       notification.error({
-        message: "Error updating background",
-        description:
-          error.message || "An error occurred while updating the background.",
+        message: "Error uploading Start background",
+        description: error.message || "An error occurred.",
       });
+    } finally {
+      setLoading(false);
     }
+    return false;
   };
 
-  const toggleStatus = async (backgroundId: string, checked: boolean) => {
-    if (!userId || !boothId) return;
+  const handleUploadVoucherBg = async (file: File) => {
+    if (!userId || !boothId) return false;
+    const storageRef = ref(
+      storage,
+      `backgrounds/${userId}/${boothId}/voucherBg/${file.name}`
+    );
     try {
+      setLoading(true);
+      await uploadBytes(storageRef, file);
+      const imageUrl = await getDownloadURL(storageRef);
       const backgroundRef = doc(
         db,
         "Clients",
@@ -169,26 +194,39 @@ const BoothBackgroundsPage: React.FC = () => {
         "Booths",
         boothId,
         "backgrounds",
-        backgroundId
+        "voucherBg"
       );
-      await updateDoc(backgroundRef, { is_active: checked });
+      await updateDoc(
+        backgroundRef,
+        { url: imageUrl, is_active: true },
+        { merge: true }
+      );
+      setVoucherBgUrl(imageUrl);
       notification.success({
         message: "Success",
-        description: `Background status changed to ${checked ? "ON" : "OFF"}.`,
+        description: "Voucher background uploaded successfully.",
       });
-      fetchBackgrounds();
     } catch (error: any) {
       notification.error({
-        message: "Error updating status",
-        description:
-          error.message || "An error occurred while updating the status.",
+        message: "Error uploading Voucher background",
+        description: error.message || "An error occurred.",
       });
+    } finally {
+      setLoading(false);
     }
+    return false;
   };
 
-  const handleDeleteBackground = async (backgroundId: string) => {
-    if (!userId || !boothId) return;
+  const handleUploadSucceedBg = async (file: File) => {
+    if (!userId || !boothId) return false;
+    const storageRef = ref(
+      storage,
+      `backgrounds/${userId}/${boothId}/succeedBg/${file.name}`
+    );
     try {
+      setLoading(true);
+      await uploadBytes(storageRef, file);
+      const imageUrl = await getDownloadURL(storageRef);
       const backgroundRef = doc(
         db,
         "Clients",
@@ -196,97 +234,126 @@ const BoothBackgroundsPage: React.FC = () => {
         "Booths",
         boothId,
         "backgrounds",
-        backgroundId
+        "succeedBg"
       );
-      await deleteDoc(backgroundRef);
+      await updateDoc(
+        backgroundRef,
+        { url: imageUrl, is_active: true },
+        { merge: true }
+      );
+      setSucceedBgUrl(imageUrl);
       notification.success({
         message: "Success",
-        description: "Background deleted successfully.",
+        description: "Succeed background uploaded successfully.",
       });
-      fetchBackgrounds();
     } catch (error: any) {
       notification.error({
-        message: "Error deleting background",
-        description:
-          error.message || "An error occurred while deleting the background.",
+        message: "Error uploading Succeed background",
+        description: error.message || "An error occurred.",
       });
+    } finally {
+      setLoading(false);
     }
+    return false;
+  };
+
+  const handleUploadQrisBg = async (file: File) => {
+    if (!userId || !boothId) return false;
+    const storageRef = ref(
+      storage,
+      `backgrounds/${userId}/${boothId}/qrisBg/${file.name}`
+    );
+    try {
+      setLoading(true);
+      await uploadBytes(storageRef, file);
+      const imageUrl = await getDownloadURL(storageRef);
+      const backgroundRef = doc(
+        db,
+        "Clients",
+        userId,
+        "Booths",
+        boothId,
+        "backgrounds",
+        "qrisBg"
+      );
+      await updateDoc(
+        backgroundRef,
+        { url: imageUrl, is_active: true },
+        { merge: true }
+      );
+      setQrisBgUrl(imageUrl);
+      notification.success({
+        message: "Success",
+        description: "QRIS background uploaded successfully.",
+      });
+    } catch (error: any) {
+      notification.error({
+        message: "Error uploading QRIS background",
+        description: error.message || "An error occurred.",
+      });
+    } finally {
+      setLoading(false);
+    }
+    return false;
   };
 
   useEffect(() => {
     if (userId && boothId) {
       fetchBackgrounds();
+
+      const backgroundTypes = [
+        "homeBg",
+        "startBg",
+        "voucherBg",
+        "succeedBg",
+        "qrisBg",
+      ];
+      const unsubscribes = backgroundTypes.map((type) =>
+        onSnapshot(
+          doc(db, "Clients", userId, "Booths", boothId, "backgrounds", type),
+          (docSnap) => {
+            if (docSnap.exists()) {
+              const data = docSnap.data() as Background;
+              switch (type) {
+                case "homeBg":
+                  setHomeBgUrl(data.url || null);
+                  break;
+                case "startBg":
+                  setStartBgUrl(data.url || null);
+                  break;
+                case "voucherBg":
+                  setVoucherBgUrl(data.url || null);
+                  break;
+                case "succeedBg":
+                  setSucceedBgUrl(data.url || null);
+                  break;
+                case "qrisBg":
+                  setQrisBgUrl(data.url || null);
+                  break;
+              }
+            }
+          },
+          (error) => {
+            console.error(`Error with Firestore onSnapshot (${type}):`, error);
+            notification.error({
+              message: "Real-time sync error",
+              description: `Could not sync ${type} background.`,
+            });
+          }
+        )
+      );
+
+      return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
     }
   }, [userId, boothId]);
 
-  if (loading) {
+  if (identityLoading || loading) {
     return (
       <div style={{ padding: 24, textAlign: "center" }}>
         <Spin tip="Loading backgrounds..." />
       </div>
     );
   }
-
-  const columns = [
-    { title: "Name", dataIndex: "name", key: "name" },
-    {
-      title: "URL",
-      dataIndex: "url",
-      key: "url",
-      render: (url: string) => (
-        <a href={url} target="_blank" rel="noopener noreferrer">
-          View Background
-        </a>
-      ),
-    },
-    {
-      title: "Status",
-      dataIndex: "is_active",
-      key: "is_active",
-      render: (value: boolean, record: Background) => (
-        <Switch
-          checked={value}
-          onChange={(checked) => toggleStatus(record.id, checked)}
-          checkedChildren="ON"
-          unCheckedChildren="OFF"
-        />
-      ),
-    },
-    {
-      title: "Actions",
-      key: "actions",
-      render: (_: any, record: Background) => (
-        <>
-          <Button
-            type="link"
-            icon={<EditOutlined />}
-            onClick={() => {
-              setSelectedBackground(record);
-              form.setFieldsValue({
-                name: record.name,
-                url: record.url,
-                is_active: record.is_active,
-              });
-              setIsEditModalVisible(true);
-            }}
-            style={{ marginRight: 8 }}
-          >
-            Edit
-          </Button>
-          <Popconfirm
-            title="Are you sure to delete this background?"
-            onConfirm={() => handleDeleteBackground(record.id)}
-            okText="Yes"
-            cancelText="No"
-          >
-            <Button type="link" icon={<DeleteOutlined />} danger>
-              Delete
-            </Button>
-          </Popconfirm>
-        </>
-      ),
-    },
-  ];
 
   return (
     <div style={{ padding: 24 }}>
@@ -298,110 +365,97 @@ const BoothBackgroundsPage: React.FC = () => {
         Back to Dashboard
       </Button>
       <Title level={2}>Backgrounds</Title>
-      <Text type="secondary">Booth ID: {boothId}</Text>
+      <TypographyText type="secondary">Booth ID: {boothId}</TypographyText>
+
+      {/* HomeBg Section */}
       <Card style={{ marginTop: 16 }}>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => setIsModalVisible(true)}
+        <Title level={4}>Home Background</Title>
+        <Avatar
+          size={200}
+          src={homeBgUrl}
+          icon={!homeBgUrl && <UploadOutlined />}
           style={{ marginBottom: 16 }}
-        >
-          Add Background
-        </Button>
-        <Table
-          dataSource={backgrounds}
-          columns={columns}
-          rowKey="id"
-          loading={loading}
-          style={{ marginTop: 16 }}
         />
+        <Upload
+          beforeUpload={handleUploadHomeBg}
+          showUploadList={false}
+          accept="image/png, image/jpeg, image/gif"
+        >
+          <Button icon={<UploadOutlined />}>Upload Home Background</Button>
+        </Upload>
       </Card>
-      <Modal
-        title="Add New Background"
-        open={isModalVisible}
-        onCancel={() => {
-          setIsModalVisible(false);
-          form.resetFields();
-        }}
-        footer={null}
-      >
-        <Form form={form} layout="vertical" onFinish={handleAddBackground}>
-          <Form.Item
-            label="Name"
-            name="name"
-            rules={[
-              { required: true, message: "Please enter the background name" },
-            ]}
-          >
-            <Input placeholder="Enter background name (e.g., Summer Theme)" />
-          </Form.Item>
-          <Form.Item
-            label="Background URL"
-            name="url"
-            rules={[
-              { required: true, message: "Please enter the background URL" },
-            ]}
-          >
-            <Input placeholder="Enter background image URL" />
-          </Form.Item>
-          <Form.Item
-            label="Active"
-            name="is_active"
-            valuePropName="checked"
-            initialValue={false}
-          >
-            <Switch checkedChildren="ON" unCheckedChildren="OFF" />
-          </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit">
-              Add Background
-            </Button>
-          </Form.Item>
-        </Form>
-      </Modal>
-      <Modal
-        title="Edit Background"
-        open={isEditModalVisible}
-        onCancel={() => {
-          setIsEditModalVisible(false);
-          form.resetFields();
-        }}
-        footer={null}
-      >
-        <Form form={form} layout="vertical" onFinish={handleEditBackground}>
-          <Form.Item
-            label="Name"
-            name="name"
-            rules={[
-              { required: true, message: "Please enter the background name" },
-            ]}
-          >
-            <Input placeholder="Enter background name" />
-          </Form.Item>
-          <Form.Item
-            label="Background URL"
-            name="url"
-            rules={[
-              { required: true, message: "Please enter the background URL" },
-            ]}
-          >
-            <Input placeholder="Enter background image URL" />
-          </Form.Item>
-          <Form.Item
-            label="Active"
-            name="is_active"
-            valuePropName="checked"
-            initialValue={false}
-          >
-            <Switch checkedChildren="ON" unCheckedChildren="OFF" />
-          </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit">
-              Save Changes
-            </Button>
-          </Form.Item>
-        </Form>
-      </Modal>
+
+      {/* StartBg Section */}
+      <Card style={{ marginTop: 16 }}>
+        <Title level={4}>Start Background</Title>
+        <Avatar
+          size={200}
+          src={startBgUrl}
+          icon={!startBgUrl && <UploadOutlined />}
+          style={{ marginBottom: 16 }}
+        />
+        <Upload
+          beforeUpload={handleUploadStartBg}
+          showUploadList={false}
+          accept="image/png, image/jpeg, image/gif"
+        >
+          <Button icon={<UploadOutlined />}>Upload Start Background</Button>
+        </Upload>
+      </Card>
+
+      {/* VoucherBg Section */}
+      <Card style={{ marginTop: 16 }}>
+        <Title level={4}>Voucher Background</Title>
+        <Avatar
+          size={200}
+          src={voucherBgUrl}
+          icon={!voucherBgUrl && <UploadOutlined />}
+          style={{ marginBottom: 16 }}
+        />
+        <Upload
+          beforeUpload={handleUploadVoucherBg}
+          showUploadList={false}
+          accept="image/png, image/jpeg, image/gif"
+        >
+          <Button icon={<UploadOutlined />}>Upload Voucher Background</Button>
+        </Upload>
+      </Card>
+
+      {/* SucceedBg Section */}
+      <Card style={{ marginTop: 16 }}>
+        <Title level={4}>Succeed Background</Title>
+        <Avatar
+          size={200}
+          src={succeedBgUrl}
+          icon={!succeedBgUrl && <UploadOutlined />}
+          style={{ marginBottom: 16 }}
+        />
+        <Upload
+          beforeUpload={handleUploadSucceedBg}
+          showUploadList={false}
+          accept="image/png, image/jpeg, image/gif"
+        >
+          <Button icon={<UploadOutlined />}>Upload Succeed Background</Button>
+        </Upload>
+      </Card>
+
+      {/* QRISBg Section */}
+      <Card style={{ marginTop: 16 }}>
+        <Title level={4}>QRIS Background</Title>
+        <Avatar
+          size={200}
+          src={qrisBgUrl}
+          icon={!qrisBgUrl && <UploadOutlined />}
+          style={{ marginBottom: 16 }}
+        />
+        <Upload
+          beforeUpload={handleUploadQrisBg}
+          showUploadList={false}
+          accept="image/png, image/jpeg, image/gif"
+        >
+          <Button icon={<UploadOutlined />}>Upload QRIS Background</Button>
+        </Upload>
+      </Card>
     </div>
   );
 };
