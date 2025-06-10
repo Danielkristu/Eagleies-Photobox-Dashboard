@@ -3,8 +3,9 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useGetIdentity } from "@refinedev/core";
-import { doc, getDoc, updateDoc, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore"; // Changed updateDoc to setDoc
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { getAuth } from "firebase/auth";
 import { db, storage } from "../firebase";
 import {
   Card,
@@ -54,8 +55,13 @@ const BoothBackgroundsPage: React.FC = () => {
           description: "Please log in to access this page.",
         });
       } else {
-        console.log("Authenticated User ID:", userId);
+        const auth = getAuth();
+        console.log("Authenticated User ID from useGetIdentity:", userId);
+        console.log("Firebase Auth UID:", auth.currentUser?.uid);
         console.log("Booth ID:", boothId);
+        if (auth.currentUser?.uid !== userId) {
+          console.warn("Mismatch between useGetIdentity ID and Firebase UID");
+        }
       }
     }
   }, [userIdentity, identityLoading, navigate]);
@@ -103,7 +109,8 @@ const BoothBackgroundsPage: React.FC = () => {
     );
     try {
       setLoading(true);
-      console.log("Attempting to upload to:", storageRef.fullPath); // Debug log
+      console.log("Attempting to upload to:", storageRef.fullPath);
+      console.log("Current Firebase User:", getAuth().currentUser);
       await uploadBytes(storageRef, file);
       const imageUrl = await getDownloadURL(storageRef);
       const backgroundRef = doc(
@@ -115,18 +122,18 @@ const BoothBackgroundsPage: React.FC = () => {
         "backgrounds",
         "homeBg"
       );
-      await updateDoc(
+      await setDoc(
         backgroundRef,
         { url: imageUrl, is_active: true },
         { merge: true }
-      );
+      ); // Changed to setDoc
       setHomeBgUrl(imageUrl);
       notification.success({
         message: "Success",
         description: "Home background uploaded successfully.",
       });
     } catch (error: any) {
-      console.error("Upload error:", error); // Debug log
+      console.error("Upload error:", error);
       notification.error({
         message: "Error uploading Home background",
         description: error.message || "An error occurred.",
@@ -156,7 +163,7 @@ const BoothBackgroundsPage: React.FC = () => {
         "backgrounds",
         "startBg"
       );
-      await updateDoc(
+      await setDoc(
         backgroundRef,
         { url: imageUrl, is_active: true },
         { merge: true }
@@ -196,7 +203,7 @@ const BoothBackgroundsPage: React.FC = () => {
         "backgrounds",
         "voucherBg"
       );
-      await updateDoc(
+      await setDoc(
         backgroundRef,
         { url: imageUrl, is_active: true },
         { merge: true }
@@ -236,7 +243,7 @@ const BoothBackgroundsPage: React.FC = () => {
         "backgrounds",
         "succeedBg"
       );
-      await updateDoc(
+      await setDoc(
         backgroundRef,
         { url: imageUrl, is_active: true },
         { merge: true }
@@ -276,7 +283,7 @@ const BoothBackgroundsPage: React.FC = () => {
         "backgrounds",
         "qrisBg"
       );
-      await updateDoc(
+      await setDoc(
         backgroundRef,
         { url: imageUrl, is_active: true },
         { merge: true }
