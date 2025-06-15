@@ -26,6 +26,7 @@ import TransactionReportPage from "./pages/TransactionReportPage";
 import { firestoreDataProvider } from "./providers/firestore-data-provider"; // Assuming this is your Firestore Data Provider
 import ChatTransactionsPage from "./pages/ChatTransactionPage";
 import SignUpPage from "./pages/SignUpPage";
+import ManageUsersPage from "./pages/ManageUsersPage";
 
 function App() {
   return (
@@ -47,6 +48,15 @@ function App() {
                       list: "/chat",
                       meta: {
                         label: "Transaction Report",
+                      },
+                    },
+                    // --- ADD: Manage Users resource, only visible to admin ---
+                    {
+                      name: "manage-users",
+                      list: "/manage-users",
+                      meta: {
+                        label: "Manage Users",
+                        canAccess: (user: any) => user?.role === "admin",
                       },
                     },
                     // Other existing resources...
@@ -95,6 +105,11 @@ function App() {
                         element={<BoothBackgroundsPage />}
                       />
                       <Route path="/chat" element={<ChatTransactionsPage />} />
+                      {/* --- ADD: Manage Users route (admin only) --- */}
+                      <Route
+                        path="/manage-users"
+                        element={<ManageUsersPage />}
+                      />
                       {/* You might want a 404 page for routes inside the layout */}
                       {/* <Route path="*" element={<NotFoundInsideLayout />} /> */}
                     </Route>
