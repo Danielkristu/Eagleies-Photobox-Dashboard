@@ -298,6 +298,7 @@ const HomePage: React.FC = () => {
                         flexDirection: "column",
                         minHeight: 160,
                         marginBottom: 8,
+                        overflow: "hidden",
                       }}
                       bodyStyle={{
                         flexGrow: 1,
@@ -305,36 +306,49 @@ const HomePage: React.FC = () => {
                         paddingBottom: 12,
                       }}
                       actions={[
-                        <Button
-                          key="settings"
-                          icon={<SettingOutlined />}
-                          onClick={() =>
-                            navigate(`/booths/${booth.id}/settings`)
-                          }
-                          type="text"
+                        <div
+                          style={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            justifyContent: "flex-start",
+                            gap: 8,
+                            width: "100%",
+                          }}
                         >
-                          Settings
-                        </Button>,
-                        <Button
-                          key="vouchers"
-                          icon={<GiftOutlined />}
-                          onClick={() =>
-                            navigate(`/booths/${booth.id}/vouchers`)
-                          }
-                          type="text"
-                        >
-                          Vouchers
-                        </Button>,
-                        <Button
-                          key="backgrounds"
-                          icon={<PictureOutlined />}
-                          onClick={() =>
-                            navigate(`/booths/${booth.id}/backgrounds`)
-                          }
-                          type="text"
-                        >
-                          Backgrounds
-                        </Button>,
+                          <Button
+                            key="settings"
+                            icon={<SettingOutlined />}
+                            onClick={() =>
+                              navigate(`/booths/${booth.id}/settings`)
+                            }
+                            type="text"
+                          >
+                            Settings
+                          </Button>
+                          ,
+                          <Button
+                            key="vouchers"
+                            icon={<GiftOutlined />}
+                            onClick={() =>
+                              navigate(`/booths/${booth.id}/vouchers`)
+                            }
+                            type="text"
+                          >
+                            Vouchers
+                          </Button>
+                          ,
+                          <Button
+                            key="backgrounds"
+                            icon={<PictureOutlined />}
+                            onClick={() =>
+                              navigate(`/booths/${booth.id}/backgrounds`)
+                            }
+                            type="text"
+                          >
+                            Backgrounds
+                          </Button>
+                          ,
+                        </div>,
                       ]}
                     >
                       <Text
