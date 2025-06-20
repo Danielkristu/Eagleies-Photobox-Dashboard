@@ -1,46 +1,87 @@
 // src/pages/Login.tsx
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { useLogin } from "@refinedev/core";
 import { Form, Input, Button, App as AntdApp, Typography } from "antd";
 import type { HttpError } from "@refinedev/core";
 
 const { Title } = Typography;
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_V3_SITE_KEY;
 
 export default function Login() {
   const { mutate: login, isLoading } = useLogin();
+  const recaptchaLoaded = useRef(false);
 
   const { notification } = AntdApp.useApp();
 
-  const onFinish = (values: { email: string; password: string }) => {
-    login(values, {
-      onError: (error: HttpError) => {
-        let errorMessage = "Unknown error occurred.";
+  useEffect(() => {
+    if (!recaptchaLoaded.current) {
+      const script = document.createElement("script");
+      script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
+      script.async = true;
+      script.onload = () => {
+        recaptchaLoaded.current = true;
+      };
+      document.body.appendChild(script);
+    }
+  }, []);
 
-        if (error.statusCode) {
-          if (
-            typeof error.statusCode === "number" &&
-            error.statusCode === 401
-          ) {
-            errorMessage = "Invalid email or password.";
-          } else {
-            errorMessage = `Login failed with status code ${error.statusCode}.`;
-          }
+  const onFinish = async (values: { email: string; password: string }) => {
+    if (!(window as any).grecaptcha) {
+      notification.error({
+        message: "reCAPTCHA Error",
+        description: "reCAPTCHA not loaded. Please try again.",
+      });
+      return;
+    }
+    try {
+      const token = await (window as any).grecaptcha.execute(
+        RECAPTCHA_SITE_KEY,
+        {
+          action: "login",
         }
-        if (error.message) {
-          errorMessage = error.message;
-        } else if (error.errors && error.errors.length > 0) {
-          errorMessage = error.errors
-            .map((e: any) => e.message || e.detail || e.field)
-            .join(", ");
-        }
+      );
+      login(
+        { ...values, recaptchaToken: token },
+        {
+          onError: (error: any) => {
+            let errorMessage = "Unknown error occurred.";
 
-        notification.error({
-          message: "Login Failed",
-          description: errorMessage,
-        });
-      },
-    });
+            if (error.statusCode) {
+              if (
+                typeof error.statusCode === "number" &&
+                error.statusCode === 401
+              ) {
+                errorMessage = "Invalid email or password.";
+              } else {
+                errorMessage = `Login failed with status code ${error.statusCode}.`;
+              }
+            }
+            if (error.message) {
+              errorMessage = error.message;
+            } else if (
+              error.errors &&
+              Array.isArray(error.errors) &&
+              error.errors.length > 0
+            ) {
+              errorMessage = error.errors
+                .map((e: any) => e.message || e.detail || e.field)
+                .join(", ");
+            }
+
+            notification.error({
+              message: "Login Failed",
+              description: errorMessage,
+            });
+          },
+        }
+      );
+    } catch (err) {
+      notification.error({
+        message: "reCAPTCHA Error",
+        description: "Failed to verify reCAPTCHA. Please try again.",
+      });
+    }
   };
 
   return (
@@ -105,6 +146,12 @@ export default function Login() {
             Login
           </Button>
         </Form.Item>
+        <div style={{ textAlign: "center", color: "#fff", marginTop: 8 }}>
+          Don't have an account?{"  "}
+          <a href="/signup" style={{ color: "#a19787" }}>
+            Create new account
+          </a>
+        </div>
       </Form>
     </div>
   );

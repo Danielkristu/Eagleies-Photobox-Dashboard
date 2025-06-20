@@ -144,18 +144,24 @@ const HomePage: React.FC = () => {
   }
 
   return (
-    <div style={{ padding: 24 }}>
-      <Title level={2} style={{ marginBottom: 24 }}>
+    <div style={{ padding: 12, maxWidth: "100%", margin: 0 }}>
+      <Title
+        level={2}
+        style={{
+          marginBottom: 24,
+          fontSize: 24,
+        }}
+      >
         Welcome, User Client
       </Title>
 
-      <Row gutter={[24, 24]}>
-        <Col xs={24} sm={12} md={8}>
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={12} md={8} style={{ marginBottom: 12 }}>
           <Card
-            title="Total Pendapatan"
+            title={<span style={{ fontSize: 16 }}>Total Pendapatan</span>}
             bordered={false}
             extra={<DollarOutlined />}
-            style={{ textAlign: "center" }}
+            style={{ textAlign: "center", minHeight: 120, width: "100%" }}
           >
             {loadingRevenue ? (
               <Skeleton.Input
@@ -183,12 +189,12 @@ const HomePage: React.FC = () => {
           </Card>
         </Col>
 
-        <Col xs={24} sm={12} md={8}>
+        <Col xs={24} sm={12} md={8} style={{ marginBottom: 12 }}>
           <Card
-            title="Jumlah Booth"
+            title={<span style={{ fontSize: 16 }}>Jumlah Booth</span>}
             bordered={false}
             extra={<AppstoreAddOutlined />}
-            style={{ textAlign: "center" }}
+            style={{ textAlign: "center", minHeight: 120, width: "100%" }}
           >
             {loadingBooths ? (
               <Skeleton.Input
@@ -217,9 +223,14 @@ const HomePage: React.FC = () => {
         </Col>
       </Row>
 
-      <Row gutter={[24, 24]} style={{ marginTop: 24 }}>
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24}>
-          <Card title="Your Booths" bordered={false} extra={<TeamOutlined />}>
+          <Card
+            title={<span style={{ fontSize: 16 }}>Your Booths</span>}
+            bordered={false}
+            extra={<TeamOutlined />}
+            style={{ width: "100%" }}
+          >
             {loadingBooths ? (
               <Row gutter={[16, 16]}>
                 {[...Array(booths.length > 0 ? booths.length : 2)].map(
@@ -252,21 +263,46 @@ const HomePage: React.FC = () => {
                 description={<Text type="secondary">No booths found.</Text>}
               />
             ) : (
-              <Row gutter={[16, 16]}>
+              <Row
+                gutter={[12, 12]}
+                justify="start"
+                style={{
+                  flexWrap: "wrap",
+                  overflowX: "auto",
+                  WebkitOverflowScrolling: "touch",
+                  marginLeft: -4,
+                  marginRight: -4,
+                }}
+              >
                 {booths.map((booth) => (
-                  <Col xs={24} sm={24} md={24} lg={12} key={booth.id}>
+                  <Col
+                    xs={24}
+                    sm={24}
+                    md={12}
+                    lg={12}
+                    xl={8}
+                    key={booth.id}
+                    style={{
+                      minWidth: 260,
+                      maxWidth: "100%",
+                      paddingLeft: 4,
+                      paddingRight: 4,
+                    }}
+                  >
                     <Card
                       hoverable
-                      title={booth.name}
+                      title={<span style={{ fontSize: 15 }}>{booth.name}</span>}
                       style={{
                         height: "100%",
                         display: "flex",
                         flexDirection: "column",
+                        minHeight: 160,
+                        marginBottom: 8,
                       }}
                       bodyStyle={{
                         flexGrow: 1,
-                        paddingTop: 16,
-                        paddingBottom: 16,
+                        paddingTop: 12,
+                        paddingBottom: 12,
                       }}
                       actions={[
                         <Button
@@ -301,7 +337,15 @@ const HomePage: React.FC = () => {
                         </Button>,
                       ]}
                     >
-                      <Text type="secondary">Booth ID: {booth.id}</Text>
+                      <Text
+                        type="secondary"
+                        style={{
+                          fontSize: 13,
+                          wordBreak: "break-all",
+                        }}
+                      >
+                        Booth ID: {booth.id}
+                      </Text>
                     </Card>
                   </Col>
                 ))}

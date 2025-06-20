@@ -87,3 +87,5 @@ export const getBoothToken = onCall<RequestData>(
     return { token: customToken };
   }
 );
+
+export * from "./verifyRecaptcha";

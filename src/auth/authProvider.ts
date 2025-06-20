@@ -44,7 +44,25 @@ export const authProvider: AuthBindings = {
 
       const role = await syncUserToFirestore(user);
 
-      localStorage.setItem("user", JSON.stringify({ uid: user.uid, role }));
+      // Fetch all user fields from Firestore
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+      let userData: any = { uid: user.uid, role };
+      if (userSnap.exists()) {
+        const data = userSnap.data();
+        userData = {
+          uid: user.uid,
+          role: data.role || role,
+        };
+        if (data.email || user.email) userData.email = data.email || user.email;
+        if (data.name || user.displayName) userData.name = data.name || user.displayName;
+        if (data.profilePictureUrl) userData.profilePictureUrl = data.profilePictureUrl;
+        if (data.phoneNumber || user.phoneNumber) userData.phoneNumber = data.phoneNumber || user.phoneNumber;
+      }
+      localStorage.setItem("user", JSON.stringify(userData));
+      // Debug: log userData and localStorage
+      console.log('Saved userData to localStorage:', userData);
+      console.log('localStorage user:', localStorage.getItem('user'));
 
       return { success: true, redirectTo: "/" };
     } catch (error: any) {
@@ -72,7 +90,16 @@ export const authProvider: AuthBindings = {
   },
   getIdentity: async () => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
-    return user?.uid ? { id: user.uid } : null;
+    return user?.uid
+      ? {
+          id: user.uid,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          profilePictureUrl: user.profilePictureUrl,
+          phoneNumber: user.phoneNumber,
+        }
+      : null;
   },
   onError: function (error: any): Promise<OnErrorResponse> {
     throw new Error("Function not implemented.");

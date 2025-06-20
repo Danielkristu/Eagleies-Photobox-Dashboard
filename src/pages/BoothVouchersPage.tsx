@@ -99,7 +99,20 @@ const BoothVouchersPage: React.FC = () => {
   const handleAddVoucher = async (values: any) => {
     if (!userId || !boothId) return;
     try {
-      const voucherCode = values.code.toUpperCase();
+      console.log("handleAddVoucher values:", values);
+      if (
+        !values.code ||
+        typeof values.code !== "string" ||
+        !values.code.trim()
+      ) {
+        notification.error({
+          message: "Error adding voucher",
+          description: "Voucher code is required.",
+        });
+        return;
+      }
+      const voucherCode = values.code.replace(/\s+/g, "").toUpperCase();
+      console.log("voucherCode to be used:", voucherCode);
       const voucherRef = doc(
         db,
         "Clients",
@@ -385,10 +398,25 @@ const BoothVouchersPage: React.FC = () => {
             name="code"
             rules={[
               { required: true, message: "Please enter the voucher code" },
+              { min: 3, message: "Code must be at least 3 characters" },
+              {
+                pattern: /^[A-Z0-9]+$/,
+                message: "Code must be uppercase letters or numbers only",
+              },
             ]}
-            normalize={(value) => (value ? value.toUpperCase() : value)}
+            validateTrigger={["onChange", "onBlur"]}
           >
-            <Input placeholder="Enter voucher code (e.g., VOUCHER123)" />{" "}
+            <Input
+              placeholder="Enter voucher code (e.g., VOUCHER123)"
+              autoComplete="off"
+              maxLength={20}
+              allowClear
+              onChange={(e) => {
+                // Auto-transform to uppercase and remove spaces
+                const value = e.target.value.toUpperCase().replace(/\s+/g, "");
+                form.setFieldsValue({ code: value });
+              }}
+            />{" "}
             {/* Rely on theme */}
           </Form.Item>
           <Form.Item
