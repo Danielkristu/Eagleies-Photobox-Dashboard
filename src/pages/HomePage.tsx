@@ -113,6 +113,7 @@ const HomePage: React.FC = () => {
   };
 
   useEffect(() => {
+    console.log("userIdentity in HomePage:", userIdentity);
     if (userIdentity?.id) {
       fetchBoothsData(userIdentity.id);
       fetchRevenueData(userIdentity.id);
@@ -159,7 +160,7 @@ const HomePage: React.FC = () => {
         <Col xs={24} sm={12} md={8} style={{ marginBottom: 12 }}>
           <Card
             title={<span style={{ fontSize: 16 }}>Total Pendapatan</span>}
-            bordered={false}
+            variant="borderless"
             extra={<DollarOutlined />}
             style={{ textAlign: "center", minHeight: 120, width: "100%" }}
           >
@@ -192,7 +193,7 @@ const HomePage: React.FC = () => {
         <Col xs={24} sm={12} md={8} style={{ marginBottom: 12 }}>
           <Card
             title={<span style={{ fontSize: 16 }}>Jumlah Booth</span>}
-            bordered={false}
+            variant="borderless"
             extra={<AppstoreAddOutlined />}
             style={{ textAlign: "center", minHeight: 120, width: "100%" }}
           >
@@ -227,7 +228,7 @@ const HomePage: React.FC = () => {
         <Col xs={24}>
           <Card
             title={<span style={{ fontSize: 16 }}>Your Booths</span>}
-            bordered={false}
+            variant="borderless"
             extra={<TeamOutlined />}
             style={{ width: "100%" }}
           >
@@ -258,10 +259,6 @@ const HomePage: React.FC = () => {
                   Retry
                 </Button>
               </div>
-            ) : booths.length === 0 ? (
-              <Empty
-                description={<Text type="secondary">No booths found.</Text>}
-              />
             ) : (
               <Row
                 gutter={[12, 12]}
@@ -274,95 +271,177 @@ const HomePage: React.FC = () => {
                   marginRight: -4,
                 }}
               >
-                {booths.map((booth) => (
+                {/* Add Booth Card - always show unless loadingBooths is true */}
+                {!loadingBooths && (
                   <Col
                     xs={24}
                     sm={24}
                     md={12}
                     lg={12}
                     xl={8}
-                    key={booth.id}
                     style={{
                       minWidth: 260,
                       maxWidth: "100%",
                       paddingLeft: 4,
                       paddingRight: 4,
                     }}
+                    key="add-booth"
                   >
                     <Card
                       hoverable
-                      title={<span style={{ fontSize: 15 }}>{booth.name}</span>}
+                      variant="outlined"
                       style={{
                         height: "100%",
                         display: "flex",
                         flexDirection: "column",
                         minHeight: 160,
                         marginBottom: 8,
-                        overflow: "hidden",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        border: "2px dashed #888",
+                        background: "#181818",
                       }}
                       bodyStyle={{
                         flexGrow: 1,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
                         paddingTop: 12,
                         paddingBottom: 12,
                       }}
-                      actions={[
-                        <div
-                          style={{
-                            display: "flex",
-                            flexWrap: "wrap",
-                            justifyContent: "flex-start",
-                            gap: 8,
-                            width: "100%",
-                          }}
-                        >
-                          <Button
-                            key="settings"
-                            icon={<SettingOutlined />}
-                            onClick={() =>
-                              navigate(`/booths/${booth.id}/settings`)
-                            }
-                            type="text"
-                          >
-                            Settings
-                          </Button>
-                          ,
-                          <Button
-                            key="vouchers"
-                            icon={<GiftOutlined />}
-                            onClick={() =>
-                              navigate(`/booths/${booth.id}/vouchers`)
-                            }
-                            type="text"
-                          >
-                            Vouchers
-                          </Button>
-                          ,
-                          <Button
-                            key="backgrounds"
-                            icon={<PictureOutlined />}
-                            onClick={() =>
-                              navigate(`/booths/${booth.id}/backgrounds`)
-                            }
-                            type="text"
-                          >
-                            Backgrounds
-                          </Button>
-                          ,
-                        </div>,
-                      ]}
+                      onClick={() => navigate("/booths/new")}
                     >
-                      <Text
-                        type="secondary"
+                      <Button
+                        type="dashed"
+                        shape="circle"
+                        size="large"
+                        icon={<AppstoreAddOutlined style={{ fontSize: 28 }} />}
                         style={{
-                          fontSize: 13,
-                          wordBreak: "break-all",
+                          marginBottom: 8,
+                          border: "none",
+                          background: "#222",
                         }}
+                      />
+                      <span
+                        style={{ color: "#aaa", fontWeight: 500, fontSize: 15 }}
                       >
-                        Booth ID: {booth.id}
-                      </Text>
+                        Add Booth
+                      </span>
                     </Card>
                   </Col>
-                ))}
+                )}
+                {/* Existing Booth Cards */}
+                {!loadingBooths &&
+                  booths.map((booth) => (
+                    <Col
+                      xs={24}
+                      sm={24}
+                      md={12}
+                      lg={12}
+                      xl={8}
+                      key={booth.id}
+                      style={{
+                        minWidth: 260,
+                        maxWidth: "100%",
+                        paddingLeft: 4,
+                        paddingRight: 4,
+                      }}
+                    >
+                      <Card
+                        hoverable
+                        variant="outlined"
+                        title={
+                          <span style={{ fontSize: 15 }}>{booth.name}</span>
+                        }
+                        style={{
+                          height: "100%",
+                          display: "flex",
+                          flexDirection: "column",
+                          minHeight: 160,
+                          marginBottom: 8,
+                          overflow: "hidden",
+                        }}
+                        bodyStyle={{
+                          flexGrow: 1,
+                          paddingTop: 12,
+                          paddingBottom: 12,
+                        }}
+                        actions={[
+                          <div
+                            style={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              justifyContent: "flex-start",
+                              width: "100%",
+                            }}
+                          >
+                            <Button
+                              key="settings"
+                              icon={<SettingOutlined />}
+                              onClick={() =>
+                                navigate(`/booths/${booth.id}/settings`)
+                              }
+                              type="text"
+                              style={{
+                                borderRight: "1px solid #444",
+                                borderRadius: 0,
+                                marginRight: 0,
+                                paddingRight: 16,
+                                minWidth: 0,
+                              }}
+                            >
+                              Settings
+                            </Button>
+                            <Button
+                              key="vouchers"
+                              icon={<GiftOutlined />}
+                              onClick={() =>
+                                navigate(`/booths/${booth.id}/vouchers`)
+                              }
+                              type="text"
+                              style={{
+                                borderRight: "1px solid #444",
+                                borderRadius: 0,
+                                marginRight: 0,
+                                paddingRight: 16,
+                                minWidth: 0,
+                              }}
+                            >
+                              Vouchers
+                            </Button>
+                            <Button
+                              key="backgrounds"
+                              icon={<PictureOutlined />}
+                              onClick={() =>
+                                navigate(`/booths/${booth.id}/backgrounds`)
+                              }
+                              type="text"
+                              style={{
+                                borderRight: "none",
+                                borderRadius: 0,
+                                marginRight: 0,
+                                paddingRight: 0,
+                                minWidth: 0,
+                              }}
+                            >
+                              Backgrounds
+                            </Button>
+                          </div>,
+                        ]}
+                      >
+                        <Text
+                          type="secondary"
+                          style={{
+                            fontSize: 13,
+                            wordBreak: "break-all",
+                          }}
+                        >
+                          Booth ID: {booth.id}
+                        </Text>
+                      </Card>
+                    </Col>
+                  ))}
               </Row>
             )}
           </Card>

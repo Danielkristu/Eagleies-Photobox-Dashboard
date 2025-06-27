@@ -6,6 +6,7 @@ import {
   Typography,
   notification,
   Divider,
+  Card,
 } from "antd";
 import { useNavigate } from "react-router-dom";
 import {
@@ -13,7 +14,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
 } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, collection, addDoc } from "firebase/firestore";
 import { auth, db } from "../firebase";
 
 const { Title, Text } = Typography;
@@ -42,12 +43,30 @@ const SignUpPage: React.FC = () => {
         createdAt: new Date(),
         provider: "email",
       });
+      // Also add to Clients collection for booth/dashboard compatibility
+      await setDoc(doc(db, "Clients", userCredential.user.uid), {
+        name: values.email.split("@")[0],
+        created_at: new Date(),
+      });
+      // Create empty Booths subcollection (add a dummy doc, but avoid reserved names)
+      const boothsColRef = collection(
+        db,
+        "Clients",
+        userCredential.user.uid,
+        "Booths"
+      );
+      // Remove the placeholder, instead create a real booth with auto-generated ID
+      await addDoc(boothsColRef, {
+        name: "Generated Booth",
+        created_at: new Date(),
+        settings: {},
+      });
 
       notification.success({
         message: "Registration Successful",
         description: `Welcome, ${values.email}`,
       });
-
+      localStorage.setItem("justSignedUp", "1");
       navigate("/");
     } catch (error: any) {
       notification.error({
@@ -72,6 +91,19 @@ const SignUpPage: React.FC = () => {
         name: user.displayName || "",
         createdAt: new Date(),
         provider: "google",
+      });
+      // Also add to Clients collection for booth/dashboard compatibility
+      await setDoc(doc(db, "Clients", user.uid), {
+        name: user.displayName || user.email?.split("@")[0] || "User",
+        created_at: new Date(),
+      });
+      // Create empty Booths subcollection (add a dummy doc, but avoid reserved names)
+      const boothsColRef = collection(db, "Clients", user.uid, "Booths");
+      // Remove the placeholder, instead create a real booth with auto-generated ID
+      await addDoc(boothsColRef, {
+        name: "Booth Pertama",
+        created_at: new Date(),
+        settings: {},
       });
 
       notification.success({
@@ -99,16 +131,9 @@ const SignUpPage: React.FC = () => {
         padding: 20,
       }}
     >
-      <Form
-        layout="vertical"
-        onFinish={handleEmailSignUp}
-        style={{
-          width: 350,
-          backgroundColor: "black",
-          padding: 24,
-          borderRadius: 8,
-          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
-        }}
+      <Card
+        variant="outlined"
+        style={{ width: 400, margin: "40px auto", padding: 16 }}
       >
         <div style={{ textAlign: "center", marginBottom: 24 }}>
           <Title level={3} style={{ marginBottom: 0, color: "white" }}>
@@ -138,60 +163,74 @@ const SignUpPage: React.FC = () => {
 
         <Divider style={{ borderColor: "#444" }}>or</Divider>
 
-        <Form.Item
-          label={<Text style={{ color: "#fff" }}>Email</Text>}
-          name="email"
-          rules={[
-            { required: true, message: "Please enter your email" },
-            { type: "email", message: "Invalid email format" },
-          ]}
+        <Form
+          layout="vertical"
+          onFinish={handleEmailSignUp}
+          style={{
+            backgroundColor: "black",
+            padding: 0,
+            borderRadius: 8,
+            boxShadow: "none",
+          }}
         >
-          <Input size="large" placeholder="you@example.com" />
-        </Form.Item>
-
-        <Form.Item
-          label={<Text style={{ color: "#fff" }}>Password</Text>}
-          name="password"
-          rules={[
-            { required: true, message: "Please enter your password" },
-            { min: 6, message: "Password must be at least 6 characters" },
-          ]}
-        >
-          <Input.Password size="large" placeholder="Create a password" />
-        </Form.Item>
-
-        <Form.Item
-          label={<Text style={{ color: "#fff" }}>Phone Number</Text>}
-          name="phone"
-          rules={[
-            { required: true, message: "Please enter your phone number" },
-            { pattern: /^[0-9]+$/, message: "Only numbers are allowed" },
-          ]}
-        >
-          <Input size="large" placeholder="08xxxxxxxxxx" />
-        </Form.Item>
-
-        <Form.Item>
-          <Button
-            htmlType="submit"
-            loading={loading}
-            block
-            size="large"
-            style={{ borderColor: "#a19787", color: "#fff" }}
+          <Form.Item
+            label={<Text style={{ color: "#fff" }}>Email</Text>}
+            name="email"
+            rules={[
+              { required: true, message: "Please enter your email" },
+              { type: "email", message: "Invalid email format" },
+            ]}
           >
-            Sign Up
-          </Button>
-        </Form.Item>
+            <Input size="large" placeholder="you@example.com" />
+          </Form.Item>
 
-        <div style={{ textAlign: "center", marginTop: 16 }}>
-          <Text style={{ color: "#bbb" }}>
-            Already have an account?{" "}
-            <a onClick={() => navigate("/login")} style={{ color: "#a19787" }}>
-              Log in here
-            </a>
-          </Text>
-        </div>
-      </Form>
+          <Form.Item
+            label={<Text style={{ color: "#fff" }}>Password</Text>}
+            name="password"
+            rules={[
+              { required: true, message: "Please enter your password" },
+              { min: 6, message: "Password must be at least 6 characters" },
+            ]}
+          >
+            <Input.Password size="large" placeholder="Create a password" />
+          </Form.Item>
+
+          <Form.Item
+            label={<Text style={{ color: "#fff" }}>Phone Number</Text>}
+            name="phone"
+            rules={[
+              { required: true, message: "Please enter your phone number" },
+              { pattern: /^[0-9]+$/, message: "Only numbers are allowed" },
+            ]}
+          >
+            <Input size="large" placeholder="08xxxxxxxxxx" />
+          </Form.Item>
+
+          <Form.Item>
+            <Button
+              htmlType="submit"
+              loading={loading}
+              block
+              size="large"
+              style={{ borderColor: "#a19787", color: "#fff" }}
+            >
+              Sign Up
+            </Button>
+          </Form.Item>
+
+          <div style={{ textAlign: "center", marginTop: 16 }}>
+            <Text style={{ color: "#bbb" }}>
+              Already have an account?{" "}
+              <a
+                onClick={() => navigate("/login")}
+                style={{ color: "#a19787" }}
+              >
+                Log in here
+              </a>
+            </Text>
+          </div>
+        </Form>
+      </Card>
     </div>
   );
 };

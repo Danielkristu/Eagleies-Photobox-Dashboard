@@ -89,7 +89,35 @@ export const authProvider: AuthBindings = {
     return user?.role;
   },
   getIdentity: async () => {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    let user = JSON.parse(localStorage.getItem("user") || "{}");
+    if (!user?.uid) {
+      // Try to get from Firebase Auth if not in localStorage
+      const { getAuth } = await import("firebase/auth");
+      const { doc, getDoc } = await import("firebase/firestore");
+      const { db } = await import("../firebase");
+      const auth = getAuth();
+      if (auth.currentUser) {
+        const userRef = doc(db, "users", auth.currentUser.uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          const data = userSnap.data();
+          user = {
+            uid: auth.currentUser.uid,
+            email: data.email || auth.currentUser.email,
+            name:
+              data.name ||
+              auth.currentUser.displayName ||
+              auth.currentUser.email?.split("@")[0] ||
+              "User",
+            role: data.role || "client", // Default to client if no role found
+            profilePictureUrl:
+              data.profilePictureUrl || auth.currentUser.photoURL || null,
+            phoneNumber: data.phoneNumber || auth.currentUser.phoneNumber,
+          };
+          localStorage.setItem("user", JSON.stringify(user));
+        }
+      }
+    }
     return user?.uid
       ? {
           id: user.uid,

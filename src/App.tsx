@@ -27,8 +27,157 @@ import { firestoreDataProvider } from "./providers/firestore-data-provider"; // 
 import ChatTransactionsPage from "./pages/ChatTransactionPage";
 import SignUpPage from "./pages/SignUpPage";
 import ManageUsersPage from "./pages/ManageUsersPage";
+import BoothCreatePage from "./pages/BoothCreatePage"; // Importing the new BoothCreatePage
+import { useEffect, useState } from "react";
+import { OnboardingOverlay } from "./components/OnboardingOverlay";
+import { useGetIdentity } from "@refinedev/core";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  collection,
+  getDocs,
+  addDoc,
+  deleteDoc,
+} from "firebase/firestore";
+import { db } from "./firebase";
 
 function App() {
+  // Use correct type for userIdentity
+  const { data: userIdentity, isLoading: identityLoading } = useGetIdentity<{
+    id: string;
+  }>();
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [checkingOnboarding, setCheckingOnboarding] = useState(true);
+
+  useEffect(() => {
+    console.log(
+      "identityLoading:",
+      identityLoading,
+      "userIdentity:",
+      userIdentity
+    );
+    const timeout = setTimeout(() => {
+      if (checkingOnboarding) {
+        console.error("Onboarding check timed out.");
+        setCheckingOnboarding(false);
+      }
+    }, 10000); // 10 seconds
+    const checkOnboarding = async () => {
+      try {
+        console.log("Checking onboarding for user:", userIdentity);
+        if (!userIdentity?.id) {
+          setShowOnboarding(false);
+          setCheckingOnboarding(false);
+          return;
+        }
+        // Check Xendit API key
+        const clientRef = doc(db, "Clients", userIdentity.id);
+        const clientSnap = await getDoc(clientRef);
+        const xenditApiKey = clientSnap.exists()
+          ? clientSnap.data().xendit_api_key
+          : undefined;
+        // Check for at least one real booth (not just placeholder)
+        const boothsCol = collection(db, "Clients", userIdentity.id, "Booths");
+        const boothsSnap = await getDocs(boothsCol);
+        const realBooth = boothsSnap.docs.find(
+          (doc) => doc.id !== "init_placeholder"
+        );
+        console.log("xenditApiKey:", xenditApiKey, "realBooth:", realBooth);
+        // --- Onboarding overlay force for just signed up users ---
+        const justSignedUp = localStorage.getItem("justSignedUp") === "1";
+        if (!xenditApiKey || !realBooth || justSignedUp) {
+          setShowOnboarding(true);
+          if (justSignedUp) localStorage.removeItem("justSignedUp");
+        } else {
+          setShowOnboarding(false);
+        }
+        setCheckingOnboarding(false);
+      } catch (err) {
+        console.error("Onboarding check error:", err);
+        setShowOnboarding(false);
+        setCheckingOnboarding(false);
+      } finally {
+        clearTimeout(timeout);
+      }
+    };
+    if (!identityLoading) checkOnboarding();
+    return () => clearTimeout(timeout);
+  }, [userIdentity, identityLoading]);
+
+  const handleOnboardingComplete = async (
+    apiKey: string,
+    boothName: string
+  ) => {
+    if (!userIdentity?.id) return;
+    // Save Xendit API key
+    const clientRef = doc(db, "Clients", userIdentity.id);
+    await updateDoc(clientRef, { xendit_api_key: apiKey });
+    // Remove placeholder booth if exists
+    const placeholderRef = doc(
+      db,
+      "Clients",
+      userIdentity.id,
+      "Booths",
+      "init_placeholder"
+    );
+    try {
+      await deleteDoc(placeholderRef);
+    } catch {}
+    // Add initial booth
+    const boothsCol = collection(db, "Clients", userIdentity.id, "Booths");
+    await addDoc(boothsCol, {
+      name: boothName,
+      created_at: new Date(),
+      settings: {},
+    });
+    setShowOnboarding(false);
+  };
+
+  if (checkingOnboarding) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          background: "#f7f8fa",
+        }}
+      >
+        <div
+          style={{
+            background: "#fff",
+            borderRadius: 16,
+            boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
+            padding: 48,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
+        >
+          <span
+            style={{
+              fontSize: 28,
+              fontWeight: 700,
+              marginBottom: 16,
+            }}
+          >
+            Loading...
+          </span>
+          <span
+            style={{
+              fontSize: 18,
+              color: "#888",
+            }}
+          >
+            Checking onboarding status, please wait.
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <BrowserRouter>
       <RefineKbarProvider>
@@ -36,6 +185,13 @@ function App() {
           <ConfigProvider>
             <AntdApp>
               <DevtoolsProvider>
+                {/* Onboarding Overlay (blocks app if needed) */}
+                {showOnboarding && !checkingOnboarding && (
+                  <OnboardingOverlay
+                    visible={showOnboarding}
+                    onComplete={handleOnboardingComplete}
+                  />
+                )}
                 <Refine
                   authProvider={authProvider}
                   notificationProvider={useNotificationProvider()}
@@ -110,6 +266,7 @@ function App() {
                         path="/manage-users"
                         element={<ManageUsersPage />}
                       />
+                      <Route path="/booths/new" element={<BoothCreatePage />} />
                       {/* You might want a 404 page for routes inside the layout */}
                       {/* <Route path="*" element={<NotFoundInsideLayout />} /> */}
                     </Route>
