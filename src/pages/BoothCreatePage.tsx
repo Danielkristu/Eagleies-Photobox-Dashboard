@@ -4,6 +4,7 @@ import { Card, Form, Input, Button, Typography, notification } from "antd";
 import { db } from "../firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useGetIdentity } from "@refinedev/core";
+import { generateBoothCode } from "./HomePage";
 
 const { Title } = Typography;
 
@@ -27,13 +28,17 @@ const BoothCreatePage: React.FC = () => {
       const colRef = collection(db, "Clients", userIdentity.id, "Booths");
       await addDoc(colRef, {
         name: values.name,
+        boothCode: generateBoothCode(),
         created_at: serverTimestamp(),
         settings: {},
       });
       notification.success({ message: "Booth created successfully!" });
       navigate("/");
     } catch (error: any) {
-      notification.error({ message: "Failed to create booth", description: error.message });
+      notification.error({
+        message: "Failed to create booth",
+        description: error.message,
+      });
     } finally {
       setLoading(false);
     }
@@ -53,11 +58,29 @@ const BoothCreatePage: React.FC = () => {
           >
             <Input placeholder="Enter booth name" autoFocus maxLength={40} />
           </Form.Item>
-          <div style={{ display: "flex", justifyContent: "center", width: "100%", gap: 12 }}>
-            <Button type="primary" htmlType="submit" loading={loading} style={{ minWidth: 160 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              width: "100%",
+              gap: 12,
+            }}
+          >
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={loading}
+              style={{ minWidth: 160 }}
+            >
               Create Booth
             </Button>
-            <Button type="default" variant="outlined" color="danger" onClick={() => navigate("/")} style={{ minWidth: 140 }}>
+            <Button
+              type="default"
+              variant="outlined"
+              color="danger"
+              onClick={() => navigate("/")}
+              style={{ minWidth: 140 }}
+            >
               Cancel
             </Button>
           </div>

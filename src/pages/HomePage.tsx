@@ -42,6 +42,15 @@ interface UserIdentity {
   name: string;
 }
 
+export function generateBoothCode() {
+  // Format: 4 uppercase letters + '-' + 4 digits, e.g. AZTX-7821
+  const letters = Array.from({ length: 4 }, () =>
+    String.fromCharCode(65 + Math.floor(Math.random() * 26))
+  ).join("");
+  const digits = String(Math.floor(1000 + Math.random() * 9000));
+  return `${letters}-${digits}`;
+}
+
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { data: userIdentity } = useGetIdentity<UserIdentity>();

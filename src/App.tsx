@@ -41,6 +41,16 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { v4 as uuidv4 } from "uuid";
+
+function generateBoothCode() {
+  // Format: 4 uppercase letters + '-' + 4 digits, e.g. AZTX-7821
+  const letters = Array.from({ length: 4 }, () =>
+    String.fromCharCode(65 + Math.floor(Math.random() * 26))
+  ).join("");
+  const digits = String(Math.floor(1000 + Math.random() * 9000));
+  return `${letters}-${digits}`;
+}
 
 function App() {
   // Use correct type for userIdentity
@@ -52,6 +62,13 @@ function App() {
   const [onboardingIncomplete, setOnboardingIncomplete] = useState(false); // Track onboarding status
 
   useEffect(() => {
+    // Hide banner if onboardingComplete is set
+    if (
+      typeof window !== "undefined" &&
+      localStorage.getItem("onboardingComplete") === "1"
+    ) {
+      setOnboardingIncomplete(false);
+    }
     console.log(
       "identityLoading:",
       identityLoading,
@@ -95,6 +112,9 @@ function App() {
         } else {
           setShowOnboarding(false);
           setOnboardingIncomplete(false);
+          if (typeof window !== "undefined") {
+            localStorage.setItem("onboardingComplete", "1");
+          }
         }
         setCheckingOnboarding(false);
       } catch (err) {
@@ -129,10 +149,11 @@ function App() {
     try {
       await deleteDoc(placeholderRef);
     } catch {}
-    // Add initial booth
+    // Add initial booth with boothCode
     const boothsCol = collection(db, "Clients", userIdentity.id, "Booths");
     await addDoc(boothsCol, {
       name: boothName,
+      boothCode: generateBoothCode(),
       created_at: new Date(),
       settings: {},
     });
@@ -273,7 +294,6 @@ function App() {
                             visible={showOnboarding}
                             onClose={() => setShowOnboarding(false)}
                             onComplete={handleOnboardingComplete}
-                            userIdentity={userIdentity}
                           />
                           <Outlet />
                         </ThemedLayoutV2>

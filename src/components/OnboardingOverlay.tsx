@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Modal, Steps, Form, Input, Button, Typography, message } from "antd";
 import {
   UploadOutlined,
@@ -14,6 +14,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
+import { ColorModeContext } from "../contexts/color-mode";
 
 const { Text } = Typography;
 
@@ -33,6 +34,12 @@ export const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({
   const [boothName, setBoothName] = useState("");
   const [loading, setLoading] = useState(false);
   const { data: userIdentity } = useGetIdentity<{ id: string }>();
+
+  const colorMode = useContext(ColorModeContext);
+  const isDark = colorMode?.mode === "dark";
+  const overlayBg = isDark ? "#181818" : "#fff";
+  const cardBg = isDark ? "#232323" : "#fff";
+  const cardColor = isDark ? "#fff" : undefined;
 
   const steps = [
     {
@@ -121,7 +128,7 @@ export const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({
         if (userIdentity?.id) {
           const clientRef = doc(db, "Clients", userIdentity.id);
           await updateDoc(clientRef, { xendit_api_key: apiKey });
-          // Find the first booth and update its name if needed
+          // Only update the name of the first booth (created at signup)
           const boothsCol = collection(
             db,
             "Clients",
@@ -129,12 +136,31 @@ export const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({
             "Booths"
           );
           const boothsSnap = await getDocs(boothsCol);
-          const firstBooth = boothsSnap.docs[0];
+          // Find the booth with the earliest created_at timestamp
+          let firstBooth: (typeof boothsSnap.docs)[0] | null = null;
+          let firstTimestamp: number | null = null;
+          boothsSnap.docs.forEach((docSnap) => {
+            const data = docSnap.data();
+            const createdAt =
+              data.created_at && data.created_at.toMillis
+                ? data.created_at.toMillis()
+                : 0;
+            if (!firstBooth || createdAt < (firstTimestamp ?? Infinity)) {
+              firstBooth = docSnap;
+              firstTimestamp = createdAt;
+            }
+          });
           if (firstBooth && firstBooth.data().name !== boothName) {
-            await updateDoc(firstBooth.ref, { name: boothName });
+            await updateDoc((firstBooth as (typeof boothsSnap.docs)[0]).ref, {
+              name: boothName,
+            });
           }
         }
         await onComplete(apiKey, boothName);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("onboardingComplete", "1");
+        }
+        if (onClose) onClose(); // <-- close overlay after save
       } catch (e) {
         message.error("Gagal menyimpan data. Coba lagi.");
         setLoading(false);
@@ -164,20 +190,21 @@ export const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({
         maxWidth: "100vw",
         height: "100vh",
         margin: 0,
-        overflow: "hidden", // prevent double scroll
+        overflow: "hidden",
+        background: overlayBg,
       }}
       styles={{
         body: {
           padding: 0,
-          minHeight: 0, // fix: don't force 100vh on body
+          minHeight: 0,
           height: "100vh",
-          background: "#fff",
+          background: overlayBg,
           overflow: "hidden",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
         },
-        mask: { background: "#fff" },
+        mask: { background: overlayBg },
       }}
       centered
       destroyOnClose
@@ -218,8 +245,8 @@ export const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          background: "#181818",
-          color: "#fff",
+          background: cardBg,
+          color: cardColor,
         }}
       >
         <Steps
