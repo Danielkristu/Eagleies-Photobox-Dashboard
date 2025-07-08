@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGetIdentity } from "@refinedev/core";
 import { doc, getDoc, updateDoc, onSnapshot } from "firebase/firestore";
@@ -73,7 +73,7 @@ const AccountSettingsPage: React.FC = () => {
           name: rawData.name || userIdentity?.name || "",
           role: rawData.role || "client",
           profilePictureUrl: rawData.profilePictureUrl || undefined,
-          phoneNumber: rawData.phoneNumber || "",
+          phoneNumber: userIdentity?.phoneNumber || rawData.phoneNumber || "",
         };
         form.setFieldsValue({
           name: userData.name,

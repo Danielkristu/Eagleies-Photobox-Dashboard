@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -25,6 +25,7 @@ import { collection, getDocs } from "firebase/firestore";
 import { db, app } from "../firebase";
 import { fetchTotalRevenueFromXendit } from "../utils/xendit";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { ColorModeContext } from "../contexts/color-mode";
 
 const { Title, Text } = Typography;
 
@@ -44,6 +45,7 @@ interface UserIdentity {
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { data: userIdentity } = useGetIdentity<UserIdentity>();
+  const { mode } = useContext(ColorModeContext);
 
   const [booths, setBooths] = useState<Booth[]>([]);
   const [totalRevenue, setTotalRevenue] = useState<number | null>(null);
@@ -298,8 +300,12 @@ const HomePage: React.FC = () => {
                         marginBottom: 8,
                         alignItems: "center",
                         justifyContent: "center",
-                        border: "2px dashed #888",
-                        background: "#181818",
+                        border:
+                          mode === "dark"
+                            ? "2px dashed #888"
+                            : "2px dashed #222",
+                        background: mode === "dark" ? "#181818" : "#fff",
+                        transition: "background 0.2s, border 0.2s",
                       }}
                       bodyStyle={{
                         flexGrow: 1,
@@ -320,7 +326,9 @@ const HomePage: React.FC = () => {
                         style={{
                           marginBottom: 8,
                           border: "none",
-                          background: "#222",
+                          background: mode === "dark" ? "#222" : "#f5f5f5",
+                          color: mode === "dark" ? "#fff" : "#222",
+                          transition: "background 0.2s, color 0.2s",
                         }}
                       />
                       <span

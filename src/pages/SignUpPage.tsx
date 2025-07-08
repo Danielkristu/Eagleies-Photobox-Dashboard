@@ -42,11 +42,13 @@ const SignUpPage: React.FC = () => {
         uid: userCredential.user.uid,
         createdAt: new Date(),
         provider: "email",
+        role: "user", // Default role
       });
       // Also add to Clients collection for booth/dashboard compatibility
       await setDoc(doc(db, "Clients", userCredential.user.uid), {
         name: values.email.split("@")[0],
         created_at: new Date(),
+        xendit_api_key: "", // Placeholder, can be updated later
       });
       // Create empty Booths subcollection (add a dummy doc, but avoid reserved names)
       const boothsColRef = collection(

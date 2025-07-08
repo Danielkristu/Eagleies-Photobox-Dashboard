@@ -12,7 +12,7 @@ import routerBindings, {
   UnsavedChangesNotifier,
 } from "@refinedev/react-router";
 
-import { ConfigProvider, App as AntdApp } from "antd";
+import { ConfigProvider, App as AntdApp, Alert } from "antd";
 import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import CustomHeader from "./components/Header"; // Correctly imported
 import { ColorModeContextProvider } from "./contexts/color-mode";
@@ -49,6 +49,7 @@ function App() {
   }>();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
+  const [onboardingIncomplete, setOnboardingIncomplete] = useState(false); // Track onboarding status
 
   useEffect(() => {
     console.log(
@@ -69,6 +70,7 @@ function App() {
         if (!userIdentity?.id) {
           setShowOnboarding(false);
           setCheckingOnboarding(false);
+          setOnboardingIncomplete(false);
           return;
         }
         // Check Xendit API key
@@ -88,14 +90,17 @@ function App() {
         const justSignedUp = localStorage.getItem("justSignedUp") === "1";
         if (!xenditApiKey || !realBooth || justSignedUp) {
           setShowOnboarding(true);
+          setOnboardingIncomplete(true);
           if (justSignedUp) localStorage.removeItem("justSignedUp");
         } else {
           setShowOnboarding(false);
+          setOnboardingIncomplete(false);
         }
         setCheckingOnboarding(false);
       } catch (err) {
         console.error("Onboarding check error:", err);
         setShowOnboarding(false);
+        setOnboardingIncomplete(false);
         setCheckingOnboarding(false);
       } finally {
         clearTimeout(timeout);
@@ -132,6 +137,11 @@ function App() {
       settings: {},
     });
     setShowOnboarding(false);
+  };
+
+  // Handler for manual onboarding start from banner
+  const handleBannerOnboarding = () => {
+    setShowOnboarding(true);
   };
 
   if (checkingOnboarding) {
@@ -184,19 +194,13 @@ function App() {
         <ColorModeContextProvider>
           <ConfigProvider>
             <AntdApp>
+              {/* Onboarding Overlay: show when needed */}
+              {/* Always show banner for debugging, but render it INSIDE the layout so it's below the header */}
               <DevtoolsProvider>
-                {/* Onboarding Overlay (blocks app if needed) */}
-                {showOnboarding && !checkingOnboarding && (
-                  <OnboardingOverlay
-                    visible={showOnboarding}
-                    onComplete={handleOnboardingComplete}
-                  />
-                )}
                 <Refine
                   authProvider={authProvider}
                   notificationProvider={useNotificationProvider()}
                   routerProvider={routerBindings}
-                  // --- ADDED: firestoreDataProvider ---
                   dataProvider={firestoreDataProvider}
                   resources={[
                     {
@@ -234,8 +238,43 @@ function App() {
                     <Route
                       element={
                         <ThemedLayoutV2 Header={CustomHeader}>
-                          {" "}
-                          {/* Correct usage of ThemedLayoutV2 and CustomHeader */}
+                          {/* Banner below header, above content */}
+                          <Alert
+                            message="Lengkapi onboarding: Masukkan Xendit API Key dan nama booth awal Anda."
+                            type="warning"
+                            showIcon
+                            style={{
+                              position: "relative",
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              zIndex: 2,
+                              borderRadius: 0,
+                              marginBottom: 0,
+                            }}
+                            action={
+                              <button
+                                style={{
+                                  background: "#1677ff",
+                                  color: "#fff",
+                                  border: "none",
+                                  borderRadius: 4,
+                                  padding: "4px 16px",
+                                  cursor: "pointer",
+                                }}
+                                onClick={handleBannerOnboarding}
+                              >
+                                Mulai Onboarding
+                              </button>
+                            }
+                          />
+                          {/* Onboarding Overlay rendered at layout level */}
+                          <OnboardingOverlay
+                            visible={showOnboarding}
+                            onClose={() => setShowOnboarding(false)}
+                            onComplete={handleOnboardingComplete}
+                            userIdentity={userIdentity}
+                          />
                           <Outlet />
                         </ThemedLayoutV2>
                       }
