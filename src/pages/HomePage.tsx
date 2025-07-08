@@ -104,6 +104,31 @@ const HomePage: React.FC = () => {
     }
   };
 
+  const fetchUserData = async (currentUserId: string) => {
+    setLoadingBooths(true);
+    setErrorBooths(null);
+    try {
+      const colRef = collection(db, "users", currentUserId);
+      const snapshot = await getDocs(colRef);
+      const userData = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        email: doc.data().email || "Unnamed User",
+        name: doc.data().name || "Unnamed User",
+      })) as UserIdentity[];
+      setUser(userData[0] || { id: "", email: "", name: "Unnamed User" });
+    } catch (error: any) {
+      const errorMessage =
+        error.message || "There was an issue fetching your user data.";
+      setErrorUser(errorMessage);
+      notification.error({
+        message: "Error fetching user data",
+        description: errorMessage,
+      });
+    } finally {
+      setLoadingBooths(false);
+    }
+  };
+
   const fetchRevenueData = async (currentUserId: string) => {
     setLoadingRevenue(true);
     setErrorRevenue(null);
@@ -128,6 +153,7 @@ const HomePage: React.FC = () => {
     if (userIdentity?.id) {
       fetchBoothsData(userIdentity.id);
       fetchRevenueData(userIdentity.id);
+      fetchUserData(userIdentity.id);
     }
   }, [userIdentity]);
 
@@ -164,7 +190,7 @@ const HomePage: React.FC = () => {
           fontSize: 24,
         }}
       >
-        Welcome, User Client
+        Welcome, {userIdentity?.name || "User"}!
       </Title>
 
       <Row gutter={[16, 16]}>
@@ -469,3 +495,11 @@ const HomePage: React.FC = () => {
 };
 
 export default HomePage;
+function setErrorUser(errorMessage: any) {
+  throw new Error("Function not implemented.");
+}
+
+function setUser(arg0: UserIdentity) {
+  throw new Error("Function not implemented.");
+}
+

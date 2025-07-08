@@ -212,179 +212,166 @@ const BoothSettingsPage: React.FC = () => {
             </Button>
           </Form.Item>
         </Form>
-        {/* Installation Section (single, full-width, with copy icons, theme-aware) */}
+      </Card>
+      {/* Installation Section (single, full-width, with copy icons, theme-aware) */}
+      <Card
+        style={{
+          marginTop: 16,
+        }}
+      >
+        <Title level={4} style={{ margin: 0, color: "var(--ant-color-text)" }}>
+          Installation
+        </Title>
+        <Text
+          type="secondary"
+          style={{ fontSize: 15, color: "var(--ant-color-text-secondary)" }}
+        >
+          Use these details to connect your photobooth device or software.
+        </Text>
         <div
           style={{
-            marginTop: 32,
-            padding: 24,
-            background: "var(--ant-color-bg-elevated)",
-            borderRadius: 12,
-            border: "1px solid var(--ant-color-border)",
-            boxShadow: "0 2px 8px 0 rgb(37, 255, 190)",
-            width: "100%",
-            maxWidth: "none",
+            marginTop: 18,
             display: "flex",
             flexDirection: "column",
-            gap: 12,
+            gap: 18,
+            maxWidth: 520,
           }}
         >
-          <Title
-            level={4}
-            style={{ margin: 0, color: "var(--ant-color-text)" }}
-          >
-            Installation
-          </Title>
-          <Text
-            type="secondary"
-            style={{ fontSize: 15, color: "var(--ant-color-text-secondary)" }}
-          >
-            Use these details to connect your photobooth device or software.
-          </Text>
-          <div
-            style={{
-              marginTop: 18,
-              display: "flex",
-              flexDirection: "column",
-              gap: 18,
-              maxWidth: 520,
-            }}
-          >
-            {/* Booth Code Row */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <Text
-                strong
-                style={{ color: "var(--ant-color-text)", minWidth: 110 }}
-              >
-                Booth Code
-              </Text>
-              <Input
-                value={boothCode || "XXXX-0000"}
-                readOnly
-                style={{
-                  background: "var(--ant-color-bg-container)",
-                  color: "var(--ant-color-text)",
-                  border: "1px solid var(--ant-color-border)",
-                  borderRadius: 6,
-                  fontWeight: 600,
-                  fontFamily: "monospace",
-                  letterSpacing: 2,
-                  fontSize: 16,
-                  flex: 1,
-                  minWidth: 0,
-                  boxShadow: "none",
-                }}
-                bordered={false}
-                aria-label="Booth Code"
-              />
-              <Button
-                icon={
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <rect
-                      x="9"
-                      y="9"
-                      width="10"
-                      height="10"
-                      rx="2"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                    />
-                    <rect
-                      x="5"
-                      y="5"
-                      width="10"
-                      height="10"
-                      rx="2"
-                      stroke="currentColor"
-                      strokeWidth="1.2"
-                    />
-                  </svg>
-                }
-                type="default"
-                size="middle"
-                style={{ minWidth: 44 }}
-                onClick={() => {
-                  navigator.clipboard.writeText(boothCode || "XXXX-0000");
-                  notification.success({ message: "Booth code copied!" });
-                }}
-                aria-label="Copy Booth Code"
-              >
-                Copy
-              </Button>
-            </div>
-            {/* Callback URL Row */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <Text
-                strong
-                style={{ color: "var(--ant-color-text)", minWidth: 110 }}
-              >
-                Callback URL
-              </Text>
-              <Input
-                value={"https://dev.eagleies.com/xendit_webhook"}
-                readOnly
-                style={{
-                  background: "var(--ant-color-bg-container)",
-                  color: "var(--ant-color-text)",
-                  border: "1px solid var(--ant-color-border)",
-                  borderRadius: 6,
-                  fontFamily: "monospace",
-                  fontSize: 15,
-                  flex: 1,
-                  minWidth: 0,
-                  boxShadow: "none",
-                }}
-                bordered={false}
-                aria-label="Callback URL"
-              />
-              <Button
-                icon={
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <rect
-                      x="9"
-                      y="9"
-                      width="10"
-                      height="10"
-                      rx="2"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                    />
-                    <rect
-                      x="5"
-                      y="5"
-                      width="10"
-                      height="10"
-                      rx="2"
-                      stroke="currentColor"
-                      strokeWidth="1.2"
-                    />
-                  </svg>
-                }
-                type="default"
-                size="middle"
-                style={{ minWidth: 44 }}
-                onClick={() => {
-                  navigator.clipboard.writeText(
-                    "https://dev.eagleies.com/xendit_webhook"
-                  );
-                  notification.success({ message: "Callback URL copied!" });
-                }}
-                aria-label="Copy Callback URL"
-              >
-                Copy
-              </Button>
-            </div>
+          {/* Booth Code Row */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <Text
+              strong
+              style={{ color: "var(--ant-color-text)", minWidth: 110 }}
+            >
+              Booth Code
+            </Text>
+            <Input
+              value={boothCode || "XXXX-0000"}
+              readOnly
+              style={{
+                background: "var(--ant-color-bg-container)",
+                color: "var(--ant-color-text)",
+                border: "1px solid var(--ant-color-border)",
+                borderRadius: 6,
+                fontWeight: 600,
+                fontFamily: "monospace",
+                letterSpacing: 2,
+                fontSize: 16,
+                flex: 1,
+                minWidth: 0,
+                boxShadow: "none",
+              }}
+              bordered={false}
+              aria-label="Booth Code"
+            />
+            <Button
+              icon={
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <rect
+                    x="9"
+                    y="9"
+                    width="10"
+                    height="10"
+                    rx="2"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  />
+                  <rect
+                    x="5"
+                    y="5"
+                    width="10"
+                    height="10"
+                    rx="2"
+                    stroke="currentColor"
+                    strokeWidth="1.2"
+                  />
+                </svg>
+              }
+              type="default"
+              size="middle"
+              style={{ minWidth: 44 }}
+              onClick={() => {
+                navigator.clipboard.writeText(boothCode || "XXXX-0000");
+                notification.success({ message: "Booth code copied!" });
+              }}
+              aria-label="Copy Booth Code"
+            >
+              Copy
+            </Button>
+          </div>
+          {/* Callback URL Row */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <Text
+              strong
+              style={{ color: "var(--ant-color-text)", minWidth: 110 }}
+            >
+              Callback URL
+            </Text>
+            <Input
+              value={"https://dev.eagleies.com/xendit_webhook"}
+              readOnly
+              style={{
+                background: "var(--ant-color-bg-container)",
+                color: "var(--ant-color-text)",
+                border: "1px solid var(--ant-color-border)",
+                borderRadius: 6,
+                fontFamily: "monospace",
+                fontSize: 15,
+                flex: 1,
+                minWidth: 0,
+                boxShadow: "none",
+              }}
+              bordered={false}
+              aria-label="Callback URL"
+            />
+            <Button
+              icon={
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <rect
+                    x="9"
+                    y="9"
+                    width="10"
+                    height="10"
+                    rx="2"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  />
+                  <rect
+                    x="5"
+                    y="5"
+                    width="10"
+                    height="10"
+                    rx="2"
+                    stroke="currentColor"
+                    strokeWidth="1.2"
+                  />
+                </svg>
+              }
+              type="default"
+              size="middle"
+              style={{ minWidth: 44 }}
+              onClick={() => {
+                navigator.clipboard.writeText(
+                  "https://dev.eagleies.com/xendit_webhook"
+                );
+                notification.success({ message: "Callback URL copied!" });
+              }}
+              aria-label="Copy Callback URL"
+            >
+              Copy
+            </Button>
           </div>
         </div>
       </Card>

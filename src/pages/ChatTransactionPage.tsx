@@ -17,6 +17,7 @@ import {
   Select,
   DatePicker,
   Button,
+  type DatePickerProps,
 } from "antd";
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useGetIdentity } from "@refinedev/core";
@@ -194,7 +195,7 @@ const ChatTransactionsPage: React.FC = () => {
         text: status,
         value: status,
       })),
-      onFilter: (value, record) => record.status === value,
+      onFilter: (value: any, record: { status: any; }) => record.status === value,
     },
 
     {
@@ -250,7 +251,7 @@ const ChatTransactionsPage: React.FC = () => {
         <Text>Filter by Date Range:</Text>
         <RangePicker
           value={tempDateRange}
-          onChange={(dates) =>
+          onChange={(dates: DatePickerProps["value"]) =>
             setTempDateRange(dates as [moment.Moment, moment.Moment] | null)
           }
           style={{ width: 250 }}

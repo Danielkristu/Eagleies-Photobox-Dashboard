@@ -20,16 +20,15 @@ import AccountSettingsPage from "./pages/AccountSettingsPage";
 import BoothBackgroundsPage from "./pages/BoothBackgroundsPage";
 import BoothSettingsPage from "./pages/BoothSettingsPage";
 import BoothVouchersPage from "./pages/BoothVouchersPage";
+import InstructionPage from "./pages/Instructions/InstructionPage";
 
 // --- NEW IMPORTS ---
-import TransactionReportPage from "./pages/TransactionReportPage";
 import { firestoreDataProvider } from "./providers/firestore-data-provider"; // Assuming this is your Firestore Data Provider
 import ChatTransactionsPage from "./pages/ChatTransactionPage";
 import SignUpPage from "./pages/SignUpPage";
 import ManageUsersPage from "./pages/ManageUsersPage";
 import BoothCreatePage from "./pages/BoothCreatePage"; // Importing the new BoothCreatePage
 import { useEffect, useState } from "react";
-import { OnboardingOverlay } from "./components/OnboardingOverlay";
 import { useGetIdentity } from "@refinedev/core";
 import {
   doc,
@@ -240,6 +239,14 @@ function App() {
                         canAccess: (user: any) => user?.role === "admin",
                       },
                     },
+                    // --- ADD: Manage Users resource, only visible to admin ---
+                    {
+                      name: "instructions",
+                      list: "/instructions",
+                      meta: {
+                        label: "Instructions",
+                      },
+                    },
                     // Other existing resources...
                   ]}
                   options={{
@@ -292,12 +299,6 @@ function App() {
                               </button>
                             }
                           />
-                          {/* Onboarding Overlay rendered at layout level */}
-                          <OnboardingOverlay
-                            visible={showOnboarding}
-                            onClose={() => setShowOnboarding(false)}
-                            onComplete={handleOnboardingComplete}
-                          />
                           <Outlet />
                         </ThemedLayoutV2>
                       }
@@ -323,6 +324,10 @@ function App() {
                         element={<BoothBackgroundsPage />}
                       />
                       <Route path="/chat" element={<ChatTransactionsPage />} />
+                      <Route
+                        path="/instructions"
+                        element={<InstructionPage />}
+                      />
                       {/* --- ADD: Manage Users route (admin only) --- */}
                       <Route
                         path="/manage-users"
