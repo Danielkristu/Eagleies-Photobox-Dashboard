@@ -220,7 +220,7 @@ const BoothSettingsPage: React.FC = () => {
             background: "var(--ant-color-bg-elevated)",
             borderRadius: 12,
             border: "1px solid var(--ant-color-border)",
-            boxShadow: "0 2px 8px 0 rgba(0,0,0,0.2)",
+            boxShadow: "0 2px 8px 0 rgb(37, 255, 190)",
             width: "100%",
             maxWidth: "none",
             display: "flex",

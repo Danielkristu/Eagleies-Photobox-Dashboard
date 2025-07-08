@@ -137,7 +137,7 @@ export const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({
           );
           const boothsSnap = await getDocs(boothsCol);
           // Find the booth with the earliest created_at timestamp
-          let firstBooth: (typeof boothsSnap.docs)[0] | null = null;
+          let firstBooth: any = null;
           let firstTimestamp: number | null = null;
           boothsSnap.docs.forEach((docSnap) => {
             const data = docSnap.data();
@@ -150,11 +150,11 @@ export const OnboardingOverlay: React.FC<OnboardingOverlayProps> = ({
               firstTimestamp = createdAt;
             }
           });
-          if (firstBooth && firstBooth.data().name !== boothName) {
-            await updateDoc((firstBooth as (typeof boothsSnap.docs)[0]).ref, {
-              name: boothName,
-            });
-          }
+            if (firstBooth && firstBooth.data().name !== boothName) {
+              await updateDoc(firstBooth.ref, {
+                name: boothName,
+              });
+            }
         }
         await onComplete(apiKey, boothName);
         if (typeof window !== "undefined") {

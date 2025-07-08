@@ -247,6 +247,9 @@ function App() {
                     warnWhenUnsavedChanges: true,
                     useNewQueryKeys: true,
                     projectId: "JbGobW-s8ff1v-UdeVw6",
+                    title: {
+                      text: "ChronoSnap",
+                    },
                   }}
                 >
                   <Routes>
