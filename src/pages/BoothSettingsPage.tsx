@@ -373,6 +373,127 @@ const BoothSettingsPage: React.FC = () => {
               Copy
             </Button>
           </div>
+          {/* dslrBooth URL Row */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <Text
+              strong
+              style={{ color: "var(--ant-color-text)", minWidth: 110 }}
+            >
+              dslrBooth API URL
+            </Text>
+            <Input
+              value={"Please refer to the Guideline in the sidebar"}
+              readOnly
+              style={{
+                background: "var(--ant-color-bg-container)",
+                color: "var(--ant-color-text)",
+                border: "1px solid var(--ant-color-border)",
+                borderRadius: 6,
+                fontFamily: "monospace",
+                fontSize: 15,
+                flex: 1,
+                minWidth: 0,
+                boxShadow: "none",
+              }}
+              bordered={false}
+              aria-label="Callback URL"
+            />
+          </div>
+          {/* dslrBooth Password Row */}
+          {/* dslrBooth URL Row */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <Text
+              strong
+              style={{ color: "var(--ant-color-text)", minWidth: 110 }}
+            >
+              dslrBooth Password
+            </Text>
+            <Input
+              value={"Please refer to the Guideline in the sidebar"}
+              readOnly
+              style={{
+                background: "var(--ant-color-bg-container)",
+                color: "var(--ant-color-text)",
+                border: "1px solid var(--ant-color-border)",
+                borderRadius: 6,
+                fontFamily: "monospace",
+                fontSize: 15,
+                flex: 1,
+                minWidth: 0,
+                boxShadow: "none",
+              }}
+              bordered={false}
+              aria-label="Callback URL"
+            />
+          </div>
+          {/* Triggers URL Row */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <Text
+              strong
+              style={{ color: "var(--ant-color-text)", minWidth: 110 }}
+            >
+              Triggers URL
+            </Text>
+            <Input
+              value={`https://dev.eagleies.com/${boothId}/dslrwebhook`}
+              readOnly
+              style={{
+                background: "var(--ant-color-bg-container)",
+                color: "var(--ant-color-text)",
+                border: "1px solid var(--ant-color-border)",
+                borderRadius: 6,
+                fontFamily: "monospace",
+                fontSize: 15,
+                flex: 1,
+                minWidth: 0,
+                boxShadow: "none",
+              }}
+              bordered={false}
+              aria-label="Triggers URL"
+            />
+            <Button
+              icon={
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <rect
+                    x="9"
+                    y="9"
+                    width="10"
+                    height="10"
+                    rx="2"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  />
+                  <rect
+                    x="5"
+                    y="5"
+                    width="10"
+                    height="10"
+                    rx="2"
+                    stroke="currentColor"
+                    strokeWidth="1.2"
+                  />
+                </svg>
+              }
+              type="default"
+              size="middle"
+              style={{ minWidth: 44 }}
+              onClick={() => {
+                navigator.clipboard.writeText(
+                  `https://dev.eagleies.com/${boothId}/dslrwebhook`
+                );
+                notification.success({ message: "Callback URL copied!" });
+              }}
+              aria-label="Copy Triggers URL"
+            >
+              Copy
+            </Button>
+          </div>
         </div>
       </Card>
     </div>

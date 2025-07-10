@@ -216,137 +216,129 @@ function App() {
             <AntdApp>
               {/* Onboarding Overlay: show when needed */}
               {/* Always show banner for debugging, but render it INSIDE the layout so it's below the header */}
-              <DevtoolsProvider>
-                <Refine
-                  authProvider={authProvider}
-                  notificationProvider={useNotificationProvider()}
-                  routerProvider={routerBindings}
-                  dataProvider={firestoreDataProvider}
-                  resources={[
-                    {
-                      name: "chat-transactions",
-                      list: "/chat",
-                      meta: {
-                        label: "Transaction Report",
-                      },
-                    },
-                    // --- ADD: Manage Users resource, only visible to admin ---
-                    {
-                      name: "manage-users",
-                      list: "/manage-users",
-                      meta: {
-                        label: "Manage Users",
-                        canAccess: (user: any) => user?.role === "admin",
-                      },
-                    },
-                    // --- ADD: Manage Users resource, only visible to admin ---
-                    {
-                      name: "instructions",
-                      list: "/instructions",
-                      meta: {
-                        label: "Instructions",
-                      },
-                    },
-                    // Other existing resources...
-                  ]}
-                  options={{
-                    syncWithLocation: true,
-                    warnWhenUnsavedChanges: true,
-                    useNewQueryKeys: true,
-                    projectId: "JbGobW-s8ff1v-UdeVw6",
-                    title: {
-                      text: "ChronoSnap",
-                    },
-                  }}
-                >
-                  <Routes>
-                    {/* Routes that should NOT use ThemedLayoutV2 (e.g., public pages) */}
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/welcome" element={<WelcomePage />} />{" "}
-                    <Route path="/signup" element={<SignUpPage />} />
-                    {/* If WelcomePage is public/doesn't need the main header */}
-                    {/* Routes that SHOULD use ThemedLayoutV2 with CustomHeader */}
-                    <Route
-                      element={
-                        <ThemedLayoutV2 Header={CustomHeader}>
-                          {/* Banner below header, above content */}
-                          <Alert
-                            message="Lengkapi onboarding: Masukkan Xendit API Key dan nama booth awal Anda."
-                            type="warning"
-                            showIcon
-                            style={{
-                              position: "relative",
-                              top: 0,
-                              left: 0,
-                              right: 0,
-                              zIndex: 2,
-                              borderRadius: 0,
-                              marginBottom: 0,
-                            }}
-                            action={
-                              <button
-                                style={{
-                                  background: "#1677ff",
-                                  color: "#fff",
-                                  border: "none",
-                                  borderRadius: 4,
-                                  padding: "4px 16px",
-                                  cursor: "pointer",
-                                }}
-                                onClick={handleBannerOnboarding}
-                              >
-                                Mulai Onboarding
-                              </button>
-                            }
-                          />
-                          <Outlet />
-                        </ThemedLayoutV2>
-                      }
-                    >
-                      {/* --- Move routes that need the layout here --- */}
-                      <Route path="/" element={<HomePage />} />{" "}
-                      {/* HomePage now uses the layout */}
-                      <Route
-                        path="/account"
-                        element={<AccountSettingsPage />}
-                      />{" "}
-                      {/* AccountSettingsPage now uses the layout */}
-                      <Route
-                        path="/booths/:boothId/settings"
-                        element={<BoothSettingsPage />}
-                      />
-                      <Route
-                        path="/booths/:boothId/vouchers"
-                        element={<BoothVouchersPage />}
-                      />
-                      <Route
-                        path="/booths/:boothId/backgrounds"
-                        element={<BoothBackgroundsPage />}
-                      />
-                      <Route path="/chat" element={<ChatTransactionsPage />} />
-                      <Route
-                        path="/instructions"
-                        element={<InstructionPage />}
-                      />
-                      {/* --- ADD: Manage Users route (admin only) --- */}
-                      <Route
-                        path="/manage-users"
-                        element={<ManageUsersPage />}
-                      />
-                      <Route path="/booths/new" element={<BoothCreatePage />} />
-                      {/* You might want a 404 page for routes inside the layout */}
-                      {/* <Route path="*" element={<NotFoundInsideLayout />} /> */}
-                    </Route>
-                    {/* A global 404 page for any routes not matched above */}
-                    {/* <Route path="*" element={<GlobalNotFound />} /> */}
-                  </Routes>
 
-                  <RefineKbar />
-                  <UnsavedChangesNotifier />
-                  <DocumentTitleHandler />
-                </Refine>
-                <DevtoolsPanel />
-              </DevtoolsProvider>
+              <Refine
+                authProvider={authProvider}
+                notificationProvider={useNotificationProvider()}
+                routerProvider={routerBindings}
+                dataProvider={firestoreDataProvider}
+                resources={[
+                  {
+                    name: "chat-transactions",
+                    list: "/chat",
+                    meta: {
+                      label: "Transaction Report",
+                    },
+                  },
+                  // --- ADD: Manage Users resource, only visible to admin ---
+                  {
+                    name: "manage-users",
+                    list: "/manage-users",
+                    meta: {
+                      label: "Manage Users",
+                      canAccess: (user: any) => user?.role === "admin",
+                    },
+                  },
+                  // --- ADD: Manage Users resource, only visible to admin ---
+                  {
+                    name: "instructions",
+                    list: "/instructions",
+                    meta: {
+                      label: "Instructions",
+                    },
+                  },
+                  // Other existing resources...
+                ]}
+                options={{
+                  syncWithLocation: true,
+                  warnWhenUnsavedChanges: true,
+                  useNewQueryKeys: true,
+                  projectId: "JbGobW-s8ff1v-UdeVw6",
+                  title: {
+                    text: "ChronoSnap",
+                  },
+                }}
+              >
+                <Routes>
+                  {/* Routes that should NOT use ThemedLayoutV2 (e.g., public pages) */}
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/welcome" element={<WelcomePage />} />{" "}
+                  <Route path="/signup" element={<SignUpPage />} />
+                  {/* If WelcomePage is public/doesn't need the main header */}
+                  {/* Routes that SHOULD use ThemedLayoutV2 with CustomHeader */}
+                  <Route
+                    element={
+                      <ThemedLayoutV2 Header={CustomHeader}>
+                        {/* Banner below header, above content */}
+                        <Alert
+                          message="Lengkapi onboarding: Masukkan Xendit API Key dan nama booth awal Anda."
+                          type="warning"
+                          showIcon
+                          style={{
+                            position: "relative",
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            zIndex: 2,
+                            borderRadius: 0,
+                            marginBottom: 0,
+                          }}
+                          action={
+                            <button
+                              style={{
+                                background: "#1677ff",
+                                color: "#fff",
+                                border: "none",
+                                borderRadius: 4,
+                                padding: "4px 16px",
+                                cursor: "pointer",
+                              }}
+                              onClick={handleBannerOnboarding}
+                            >
+                              Mulai Onboarding
+                            </button>
+                          }
+                        />
+                        <Outlet />
+                      </ThemedLayoutV2>
+                    }
+                  >
+                    {/* --- Move routes that need the layout here --- */}
+                    <Route path="/" element={<HomePage />} />{" "}
+                    {/* HomePage now uses the layout */}
+                    <Route
+                      path="/account"
+                      element={<AccountSettingsPage />}
+                    />{" "}
+                    {/* AccountSettingsPage now uses the layout */}
+                    <Route
+                      path="/booths/:boothId/settings"
+                      element={<BoothSettingsPage />}
+                    />
+                    <Route
+                      path="/booths/:boothId/vouchers"
+                      element={<BoothVouchersPage />}
+                    />
+                    <Route
+                      path="/booths/:boothId/backgrounds"
+                      element={<BoothBackgroundsPage />}
+                    />
+                    <Route path="/chat" element={<ChatTransactionsPage />} />
+                    <Route path="/instructions" element={<InstructionPage />} />
+                    {/* --- ADD: Manage Users route (admin only) --- */}
+                    <Route path="/manage-users" element={<ManageUsersPage />} />
+                    <Route path="/booths/new" element={<BoothCreatePage />} />
+                    {/* You might want a 404 page for routes inside the layout */}
+                    {/* <Route path="*" element={<NotFoundInsideLayout />} /> */}
+                  </Route>
+                  {/* A global 404 page for any routes not matched above */}
+                  {/* <Route path="*" element={<GlobalNotFound />} /> */}
+                </Routes>
+
+                <RefineKbar />
+                <UnsavedChangesNotifier />
+                <DocumentTitleHandler />
+              </Refine>
             </AntdApp>
           </ConfigProvider>
         </ColorModeContextProvider>
