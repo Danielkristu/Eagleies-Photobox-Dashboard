@@ -270,35 +270,52 @@ function App() {
                     element={
                       <ThemedLayoutV2 Header={CustomHeader}>
                         {/* Banner below header, above content */}
-                        <Alert
-                          message="Lengkapi onboarding: Masukkan Xendit API Key dan nama booth awal Anda."
-                          type="warning"
-                          showIcon
-                          style={{
-                            position: "relative",
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            zIndex: 2,
-                            borderRadius: 0,
-                            marginBottom: 0,
-                          }}
-                          action={
-                            <button
-                              style={{
-                                background: "#1677ff",
-                                color: "#fff",
-                                border: "none",
-                                borderRadius: 4,
-                                padding: "4px 16px",
-                                cursor: "pointer",
-                              }}
-                              onClick={handleBannerOnboarding}
-                            >
-                              Mulai Onboarding
-                            </button>
-                          }
-                        />
+                        {onboardingIncomplete && (
+                          <Alert
+                            message="Lengkapi onboarding: Masukkan Xendit API Key dan nama booth awal Anda."
+                            type="warning"
+                            showIcon
+                            style={{
+                              position: "relative",
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              zIndex: 2,
+                              borderRadius: 0,
+                              marginBottom: 0,
+                            }}
+                            action={
+                              <div style={{ display: "flex", gap: 8 }}>
+                                <button
+                                  style={{
+                                    background: "#1677ff",
+                                    color: "#fff",
+                                    border: "none",
+                                    borderRadius: 4,
+                                    padding: "4px 16px",
+                                    cursor: "pointer",
+                                  }}
+                                  onClick={handleBannerOnboarding}
+                                >
+                                  Start Onboarding
+                                </button>
+                                <button
+                                  style={{
+                                    background: "#52c41a",
+                                    color: "#fff",
+                                    border: "none",
+                                    borderRadius: 4,
+                                    padding: "4px 16px",
+                                    cursor: "pointer",
+                                  }}
+                                  onClick={() => setOnboardingIncomplete(false)}
+                                >
+                                  Selesai
+                                </button>
+                              </div>
+                            }
+                          />
+                        )}
                         <Outlet />
                       </ThemedLayoutV2>
                     }
