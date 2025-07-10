@@ -27,3 +27,6 @@ _.sln
 .env
 .env.local
 .env.development.local
+
+# Local Images Documents
+/docs/img
