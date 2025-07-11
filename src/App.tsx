@@ -41,6 +41,11 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { v4 as uuidv4 } from "uuid";
+import {
+  BarChartOutlined,
+  ReadOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
 
 function generateBoothCode() {
   // Format: 4 uppercase letters + '-' + 4 digits, e.g. AZTX-7821
@@ -52,161 +57,13 @@ function generateBoothCode() {
 }
 
 function App() {
-  // Use correct type for userIdentity
-  const { data: userIdentity, isLoading: identityLoading } = useGetIdentity<{
-    id: string;
-  }>();
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [checkingOnboarding, setCheckingOnboarding] = useState(true);
-  const [onboardingIncomplete, setOnboardingIncomplete] = useState(false); // Track onboarding status
+  // Remove all onboarding-related state and logic
+  // ...existing code...
+  // Remove useEffect, handleOnboardingComplete, handleBannerOnboarding, etc.
+  // Remove checkingOnboarding and onboardingIncomplete usage
 
-  useEffect(() => {
-    // Hide banner if onboardingComplete is set
-    if (
-      typeof window !== "undefined" &&
-      localStorage.getItem("onboardingComplete") === "1"
-    ) {
-      setOnboardingIncomplete(false);
-    }
-    console.log(
-      "identityLoading:",
-      identityLoading,
-      "userIdentity:",
-      userIdentity
-    );
-    const timeout = setTimeout(() => {
-      if (checkingOnboarding) {
-        console.error("Onboarding check timed out.");
-        setCheckingOnboarding(false);
-      }
-    }, 10000); // 10 seconds
-    const checkOnboarding = async () => {
-      try {
-        console.log("Checking onboarding for user:", userIdentity);
-        if (!userIdentity?.id) {
-          setShowOnboarding(false);
-          setCheckingOnboarding(false);
-          setOnboardingIncomplete(false);
-          return;
-        }
-        // Check Xendit API key
-        const clientRef = doc(db, "Clients", userIdentity.id);
-        const clientSnap = await getDoc(clientRef);
-        const xenditApiKey = clientSnap.exists()
-          ? clientSnap.data().xendit_api_key
-          : undefined;
-        // Check for at least one real booth (not just placeholder)
-        const boothsCol = collection(db, "Clients", userIdentity.id, "Booths");
-        const boothsSnap = await getDocs(boothsCol);
-        const realBooth = boothsSnap.docs.find(
-          (doc) => doc.id !== "init_placeholder"
-        );
-        console.log("xenditApiKey:", xenditApiKey, "realBooth:", realBooth);
-        // --- Onboarding overlay force for just signed up users ---
-        const justSignedUp = localStorage.getItem("justSignedUp") === "1";
-        if (!xenditApiKey || !realBooth || justSignedUp) {
-          setShowOnboarding(true);
-          setOnboardingIncomplete(true);
-          if (justSignedUp) localStorage.removeItem("justSignedUp");
-        } else {
-          setShowOnboarding(false);
-          setOnboardingIncomplete(false);
-          if (typeof window !== "undefined") {
-            localStorage.setItem("onboardingComplete", "1");
-          }
-        }
-        setCheckingOnboarding(false);
-      } catch (err) {
-        console.error("Onboarding check error:", err);
-        setShowOnboarding(false);
-        setOnboardingIncomplete(false);
-        setCheckingOnboarding(false);
-      } finally {
-        clearTimeout(timeout);
-      }
-    };
-    if (!identityLoading) checkOnboarding();
-    return () => clearTimeout(timeout);
-  }, [userIdentity, identityLoading]);
-
-  const handleOnboardingComplete = async (
-    apiKey: string,
-    boothName: string
-  ) => {
-    if (!userIdentity?.id) return;
-    // Save Xendit API key
-    const clientRef = doc(db, "Clients", userIdentity.id);
-    await updateDoc(clientRef, { xendit_api_key: apiKey });
-    // Remove placeholder booth if exists
-    const placeholderRef = doc(
-      db,
-      "Clients",
-      userIdentity.id,
-      "Booths",
-      "init_placeholder"
-    );
-    try {
-      await deleteDoc(placeholderRef);
-    } catch {}
-    // Add initial booth with boothCode
-    const boothsCol = collection(db, "Clients", userIdentity.id, "Booths");
-    await addDoc(boothsCol, {
-      name: boothName,
-      boothCode: generateBoothCode(),
-      created_at: new Date(),
-      settings: {},
-    });
-    setShowOnboarding(false);
-  };
-
-  // Handler for manual onboarding start from banner
-  const handleBannerOnboarding = () => {
-    setShowOnboarding(true);
-  };
-
-  if (checkingOnboarding) {
-    return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          background: "#f7f8fa",
-        }}
-      >
-        <div
-          style={{
-            background: "#fff",
-            borderRadius: 16,
-            boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
-            padding: 48,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
-          <span
-            style={{
-              fontSize: 28,
-              fontWeight: 700,
-              marginBottom: 16,
-            }}
-          >
-            Loading...
-          </span>
-          <span
-            style={{
-              fontSize: 18,
-              color: "#888",
-            }}
-          >
-            Checking onboarding status, please wait.
-          </span>
-        </div>
-      </div>
-    );
-  }
+  // Add banner state only
+  const [showBanner, setShowBanner] = useState(true);
 
   return (
     <BrowserRouter>
@@ -214,9 +71,6 @@ function App() {
         <ColorModeContextProvider>
           <ConfigProvider>
             <AntdApp>
-              {/* Onboarding Overlay: show when needed */}
-              {/* Always show banner for debugging, but render it INSIDE the layout so it's below the header */}
-
               <Refine
                 authProvider={authProvider}
                 notificationProvider={useNotificationProvider()}
@@ -226,28 +80,28 @@ function App() {
                   {
                     name: "chat-transactions",
                     list: "/chat",
+                    icon: <BarChartOutlined />,
                     meta: {
                       label: "Transaction Report",
                     },
                   },
-                  // --- ADD: Manage Users resource, only visible to admin ---
                   {
                     name: "manage-users",
                     list: "/manage-users",
+                    icon: <UserOutlined />,
                     meta: {
                       label: "Manage Users",
                       canAccess: (user: any) => user?.role === "admin",
                     },
                   },
-                  // --- ADD: Manage Users resource, only visible to admin ---
                   {
                     name: "instructions",
                     list: "/instructions",
+                    icon: <ReadOutlined />,
                     meta: {
                       label: "Instructions",
                     },
                   },
-                  // Other existing resources...
                 ]}
                 options={{
                   syncWithLocation: true,
@@ -260,17 +114,14 @@ function App() {
                 }}
               >
                 <Routes>
-                  {/* Routes that should NOT use ThemedLayoutV2 (e.g., public pages) */}
                   <Route path="/login" element={<Login />} />
-                  <Route path="/welcome" element={<WelcomePage />} />{" "}
+                  <Route path="/welcome" element={<WelcomePage />} />
                   <Route path="/signup" element={<SignUpPage />} />
-                  {/* If WelcomePage is public/doesn't need the main header */}
-                  {/* Routes that SHOULD use ThemedLayoutV2 with CustomHeader */}
                   <Route
                     element={
                       <ThemedLayoutV2 Header={CustomHeader}>
                         {/* Banner below header, above content */}
-                        {onboardingIncomplete && (
+                        {showBanner && (
                           <Alert
                             message="Lengkapi onboarding: Masukkan Xendit API Key dan nama booth awal Anda."
                             type="warning"
@@ -288,19 +139,6 @@ function App() {
                               <div style={{ display: "flex", gap: 8 }}>
                                 <button
                                   style={{
-                                    background: "#1677ff",
-                                    color: "#fff",
-                                    border: "none",
-                                    borderRadius: 4,
-                                    padding: "4px 16px",
-                                    cursor: "pointer",
-                                  }}
-                                  onClick={handleBannerOnboarding}
-                                >
-                                  Start Onboarding
-                                </button>
-                                <button
-                                  style={{
                                     background: "#52c41a",
                                     color: "#fff",
                                     border: "none",
@@ -308,7 +146,7 @@ function App() {
                                     padding: "4px 16px",
                                     cursor: "pointer",
                                   }}
-                                  onClick={() => setOnboardingIncomplete(false)}
+                                  onClick={() => setShowBanner(false)}
                                 >
                                   Selesai
                                 </button>

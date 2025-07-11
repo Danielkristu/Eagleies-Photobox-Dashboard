@@ -23,6 +23,7 @@ import {
   Timeline,
   Avatar,
   Alert,
+  Image,
 } from "antd";
 
 const { Title, Paragraph, Text } = Typography;
@@ -291,56 +292,186 @@ const stepsContent = [
           </Timeline>
         </Card>
 
-        {/* Part 3: Software Configuration */}
-        <Card title="Part 3: Initial Software Configuration" size="small">
-          <Paragraph>Now, let's link the two applications together.</Paragraph>
+        {/* Part 3: Software Configuration - REVISED */}
+        <Card title="Part 3: Linking ChronoSnap and dslrBooth" size="small">
           <Alert
-            message="Important: Complete these steps in order."
-            description="Make sure dslrBooth is configured before you open ChronoSnap for the first time."
-            type="info"
+            message="Follow these steps exactly."
+            description="This process ensures that when a photo is taken in dslrBooth, the information is correctly sent back to your ChronoSnap dashboard."
+            type="warning"
             showIcon
             style={{ marginBottom: 24 }}
           />
           <Timeline>
             <Timeline.Item>
-              <Text strong>Open dslrBooth.</Text>
+              <Text strong>
+                1. Set Your Xendit API Key (Required for Payments)
+              </Text>
               <Paragraph>
-                Launch the dslrBooth application. If it asks to detect a camera,
-                make sure your camera is on and connected.
+                In your ChronoSnap dashboard, click on your profile icon in the
+                top right, then go to <Text code>Account Settings</Text>. Scroll
+                down to the "Xendit API Key Settings" section. Enter the API key
+                from your Xendit dashboard and click{" "}
+                <Text strong>"Save Settings"</Text>.
               </Paragraph>
+              <Image
+                src="docs/img/XenditAPI docs.png"
+                alt="Xendit API Key Settings"
+                style={{
+                  width: "80%",
+                  maxWidth: "600px",
+                  marginBottom: "16px",
+                }}
+              />
             </Timeline.Item>
+
             <Timeline.Item>
-              <Text strong>Configure dslrBooth Settings.</Text>
+              <Text strong>2. Add a New Booth in ChronoSnap</Text>
               <Paragraph>
-                Go to <Text code>Settings &gt; General</Text> and ensure your
-                camera is visible and selected. Adjust basic quality and session
-                settings as needed.
+                In your ChronoSnap dashboard, go to the "Your Booths" section
+                and click the <Text code>+ Add Booth</Text> button. This will
+                take you to the "Booth Settings" page for your new booth.
               </Paragraph>
             </Timeline.Item>
+
             <Timeline.Item>
-              <Text strong>Open ChronoSnap.</Text>
+              <Text strong>3. Get API Details from dslrBooth</Text>
               <Paragraph>
-                Now, launch the ChronoSnap application. It should automatically
-                detect that dslrBooth is running.
+                Open the dslrBooth application. Navigate to{" "}
+                <Text code>Settings &gt; General &gt; API</Text>. Keep this
+                window open. You will need to copy two items from here.{" "}
+                <Text code>Example URL</Text> and <Text code>Password</Text>.
+                These will be used to connect ChronoSnap to dslrBooth.
+              </Paragraph>
+              <Image
+                src="docs/img/dslrBooth API docs.png"
+                alt="Add Booth"
+                style={{
+                  width: "80%",
+                  maxWidth: "600px",
+                  marginBottom: "16px",
+                }}
+              />
+            </Timeline.Item>
+
+            <Timeline.Item>
+              <Text strong>4. Fill in Booth Settings in ChronoSnap</Text>
+              <Paragraph>
+                Now, switch back to the ChronoSnap "Booth Settings" page and
+                fill in the following fields:
+                <ul>
+                  <li>
+                    <Text strong>Booth Name:</Text> Give your booth a unique
+                    name (e.g., "Wedding Party").
+                  </li>
+                  <li>
+                    <Text strong>DSLRBooth API Key:</Text> Copy the{" "}
+                    <Text code>Example URL</Text> from dslrBooth's API settings
+                    and paste it here.
+                  </li>
+                  <li>
+                    <Text strong>DSLRBooth Password:</Text> Copy the{" "}
+                    <Text code>Password</Text> from dslrBooth's API settings and
+                    paste it here.
+                  </li>
+                </ul>
+                <Image
+                  src="docs/img/BoothSettings docs.png"
+                  alt="Add Booth"
+                  style={{
+                    width: "80%",
+                    maxWidth: "600px",
+                    marginBottom: "16px",
+                  }}
+                />
               </Paragraph>
             </Timeline.Item>
+
+            <Timeline.Item>
+              <Text strong>5. Set Payment Webhooks in Xendit</Text>
+              <Paragraph>
+                In ChronoSnap's "Booth Settings" page, scroll to the
+                "Installation" section and copy the{" "}
+                <Text code>Callback URL</Text>. Now, go to your Xendit
+                Dashboard. Navigate to{" "}
+                <Text code>Settings &gt; Developers &gt; Webhooks</Text>. Paste
+                the copied URL into the fields for{" "}
+                <Text strong>"QR code terbayarkan & di-refund"</Text> and{" "}
+                <Text strong>"Payment Session Completed"</Text>. Click save.
+              </Paragraph>
+              <Alert
+                type="info"
+                showIcon
+                message="Note on Testing Webhooks"
+                description="If you click the 'Test' button in Xendit and it returns an error, please ignore it. The test payload from Xendit does not contain the necessary data our system needs to validate it, but it will work correctly with live payments."
+                style={{ marginTop: "10px" }}
+              />
+              <Image
+                src="docs/img/XenditWebhooksDash docs.png"
+                alt="Add Booth"
+                style={{
+                  width: "80%",
+                  maxWidth: "600px",
+                  marginBottom: "16px",
+                  marginTop: "16px",
+                }}
+              />
+            </Timeline.Item>
+
+            <Timeline.Item>
+              <Text strong>6. Copy the Triggers URL from ChronoSnap</Text>
+              <Paragraph>
+                After saving, stay on the "Booth Settings" page. Scroll down to
+                the "Installation" section and find the field labeled{" "}
+                <Text code>Triggers URL</Text>. Click the "Copy" button next to
+                it.
+              </Paragraph>
+              <Image
+                src="docs/img/InstallationSetup docs.png"
+                alt="Add Booth"
+                style={{
+                  width: "80%",
+                  maxWidth: "600px",
+                  marginBottom: "16px",
+                }}
+              />
+            </Timeline.Item>
+
+            <Timeline.Item>
+              <Text strong>6. Set the Trigger in dslrBooth</Text>
+              <Paragraph>
+                Go back to dslrBooth. Go to{" "}
+                <Text code>Settings &gt; Triggers</Text>. In the{" "}
+                <Text code>URL</Text> field, paste the Triggers URL you just
+                copied from ChronoSnap. This tells dslrBooth where to send data
+                after an event.
+              </Paragraph>
+              <Image
+                src="docs/img/TriggersURL docs.png"
+                alt="Add Booth"
+                style={{
+                  width: "80%",
+                  maxWidth: "600px",
+                  marginBottom: "16px",
+                }}
+              />
+            </Timeline.Item>
+
             <Timeline.Item color="green">
-              <Text strong>Link ChronoSnap to dslrBooth.</Text>
+              <Text strong>7. Note Your Access Code</Text>
               <Paragraph>
-                In ChronoSnap, navigate to{" "}
-                <Text code>Settings &gt; Booth Setup</Text>. You should see a
-                status indicator showing{" "}
-                <Text strong color="green">
-                  "Connected to dslrBooth"
-                </Text>
-                . If not, use the "Find dslrBooth" button to manually link them.
+                Finally, go back to the ChronoSnap "Booth Settings" page. The{" "}
+                <Text code>Booth Code</Text> (e.g.,{" "}
+                <Text strong>"AZYF-7324"</Text>) is the final piece. This is the
+                unique code you will enter into the photobooth app on your
+                device to connect it to this specific booth's settings.
               </Paragraph>
             </Timeline.Item>
           </Timeline>
         </Card>
+
         <Paragraph strong>
-          Once your setup is complete and the software is connected, proceed to
-          the "App Tutorial" to learn how to run your first event.
+          Your configuration is complete! Proceed to the "App Tutorial" to learn
+          how to manage your first event.
         </Paragraph>
       </Space>
     ),

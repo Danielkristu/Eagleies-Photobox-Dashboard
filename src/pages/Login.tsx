@@ -4,6 +4,8 @@ import React, { useEffect, useRef } from "react";
 import { useLogin } from "@refinedev/core";
 import { Form, Input, Button, App as AntdApp, Typography } from "antd";
 import type { HttpError } from "@refinedev/core";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { auth, db } from "../firebase";
 
 const { Title } = Typography;
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_V3_SITE_KEY;
@@ -84,6 +86,26 @@ export default function Login() {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      // Optionally sync user to Firestore (if not already handled in authProvider)
+      // You can add more logic here if needed
+      notification.success({
+        message: "Google Login Successful",
+        description: `Welcome, ${user.displayName || user.email}`,
+      });
+      window.location.href = "/";
+    } catch (error: any) {
+      notification.error({
+        message: "Google Login Failed",
+        description: error.message,
+      });
+    }
+  };
+
   return (
     <div
       style={{
@@ -115,6 +137,28 @@ export default function Login() {
             Login to PhotoBox
           </Title>
         </div>
+
+        <Form.Item>
+          <Button
+            onClick={handleGoogleLogin}
+            block
+            style={{
+              background: "#fff",
+              color: "#000",
+              fontWeight: 500,
+              marginBottom: 24,
+              border: "1px solid #dadce0",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
+            }}
+          >
+            <img
+              src="https://developers.google.com/identity/images/g-logo.png"
+              alt="google"
+              style={{ width: 18, marginRight: 8, verticalAlign: "middle" }}
+            />
+            Login with Google
+          </Button>
+        </Form.Item>
 
         <Form.Item
           label="Email"
