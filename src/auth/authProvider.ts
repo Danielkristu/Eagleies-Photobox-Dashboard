@@ -1,4 +1,5 @@
-import { AuthBindings } from "@refinedev/core";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { AuthBindings, OnErrorResponse } from "@refinedev/core";
 import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
@@ -43,7 +44,25 @@ export const authProvider: AuthBindings = {
 
       const role = await syncUserToFirestore(user);
 
-      localStorage.setItem("user", JSON.stringify({ uid: user.uid, role }));
+      // Fetch all user fields from Firestore
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+      let userData: any = { uid: user.uid, role };
+      if (userSnap.exists()) {
+        const data = userSnap.data();
+        userData = {
+          uid: user.uid,
+          role: data.role || role,
+        };
+        if (data.email || user.email) userData.email = data.email || user.email;
+        if (data.name || user.displayName) userData.name = data.name || user.displayName;
+        if (data.profilePictureUrl) userData.profilePictureUrl = data.profilePictureUrl;
+        if (data.phoneNumber || user.phoneNumber) userData.phoneNumber = data.phoneNumber || user.phoneNumber;
+      }
+      localStorage.setItem("user", JSON.stringify(userData));
+      // Debug: log userData and localStorage
+      console.log('Saved userData to localStorage:', userData);
+      console.log('localStorage user:', localStorage.getItem('user'));
 
       return { success: true, redirectTo: "/" };
     } catch (error: any) {
@@ -70,7 +89,47 @@ export const authProvider: AuthBindings = {
     return user?.role;
   },
   getIdentity: async () => {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    return user?.uid ? { id: user.uid } : null;
+    let user = JSON.parse(localStorage.getItem("user") || "{}");
+    if (!user?.uid) {
+      // Try to get from Firebase Auth if not in localStorage
+      const { getAuth } = await import("firebase/auth");
+      const { doc, getDoc } = await import("firebase/firestore");
+      const { db } = await import("../firebase");
+      const auth = getAuth();
+      if (auth.currentUser) {
+        const userRef = doc(db, "users", auth.currentUser.uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          const data = userSnap.data();
+          user = {
+            uid: auth.currentUser.uid,
+            email: data.email || auth.currentUser.email,
+            name:
+              data.name ||
+              auth.currentUser.displayName ||
+              auth.currentUser.email?.split("@")[0] ||
+              "User",
+            role: data.role || "client", // Default to client if no role found
+            profilePictureUrl:
+              data.profilePictureUrl || auth.currentUser.photoURL || null,
+            phoneNumber: data.phoneNumber || auth.currentUser.phoneNumber,
+          };
+          localStorage.setItem("user", JSON.stringify(user));
+        }
+      }
+    }
+    return user?.uid
+      ? {
+          id: user.uid,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          profilePictureUrl: user.profilePictureUrl,
+          phoneNumber: user.phoneNumber,
+        }
+      : null;
   },
+  onError: function (error: any): Promise<OnErrorResponse> {
+    throw new Error("Function not implemented.");
+  }
 };

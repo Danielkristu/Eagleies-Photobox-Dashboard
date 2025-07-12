@@ -50,15 +50,17 @@ export const ColorModeContextProvider: React.FC<PropsWithChildren> = ({
         mode,
       }}
     >
-      <ConfigProvider
-        // you can change the theme colors here. example: ...RefineThemes.Magenta,
-        theme={{
-          ...RefineThemes.Blue,
-          algorithm: mode === "light" ? defaultAlgorithm : darkAlgorithm,
-        }}
-      >
-        {children}
-      </ConfigProvider>
+      {/* Ant Design ConfigProvider is known to use findDOMNode internally in some versions. To suppress the warning in dev, wrap in a div. */}
+      <div>
+        <ConfigProvider
+          theme={{
+            ...RefineThemes.Blue,
+            algorithm: mode === "light" ? defaultAlgorithm : darkAlgorithm,
+          }}
+        >
+          {children}
+        </ConfigProvider>
+      </div>
     </ColorModeContext.Provider>
   );
 };

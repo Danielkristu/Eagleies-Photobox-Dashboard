@@ -29,23 +29,30 @@ export const firestoreDataProvider: DataProvider = {
   },
 
   getOne: async ({ id }) => {
-  const docRef = doc(db, "Photobox", id as string);
-  const snapshot = await getDoc(docRef);
+    const docRef = doc(db, "Photobox", id as string);
+    const snapshot = await getDoc(docRef);
 
-  if (!snapshot.exists()) {
-    throw new Error("Document not found");
-  }
+    if (!snapshot.exists()) {
+      throw new Error("Document not found");
+    }
 
-  const data = snapshot.data();
+    const data = snapshot.data();
 
-  return {
-    data: {
-      id: snapshot.id,
-      ...data, // ⬅️ Harus mengandung semua field (price, callback_url, dll)
-    },
-  };
-}
 
+
+
+
+
+
+
+
+    return {
+      data: {
+        id: snapshot.id,
+        ...data, // ⬅️ Harus mengandung semua field (price, callback_url, dll)
+      },
+    };
+  },
 
   create: async ({ resource, variables }) => {
     const docRef = await addDoc(collection(db, resource), variables);
