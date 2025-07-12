@@ -314,7 +314,7 @@ const stepsContent = [
                 <Text strong>"Save Settings"</Text>.
               </Paragraph>
               <Image
-                src="docs/img/XenditAPI docs.png"
+                src="https://eagleies.com/img/XenditAPI%20docs.png"
                 alt="Xendit API Key Settings"
                 style={{
                   width: "80%",
@@ -343,7 +343,7 @@ const stepsContent = [
                 These will be used to connect ChronoSnap to dslrBooth.
               </Paragraph>
               <Image
-                src="docs/img/dslrBooth API docs.png"
+                src="https://eagleies.com/img/dslrBooth%20API%20docs.png"
                 alt="Add Booth"
                 style={{
                   width: "80%",
@@ -375,7 +375,7 @@ const stepsContent = [
                   </li>
                 </ul>
                 <Image
-                  src="docs/img/BoothSettings docs.png"
+                  src="https://eagleies.com/img/BoothSettings%20docs.png"
                   alt="Add Booth"
                   style={{
                     width: "80%",
@@ -406,7 +406,7 @@ const stepsContent = [
                 style={{ marginTop: "10px" }}
               />
               <Image
-                src="docs/img/XenditWebhooksDash docs.png"
+                src="https://eagleies.com/img/XenditWebhooksDash%20docs.png"
                 alt="Add Booth"
                 style={{
                   width: "80%",
@@ -426,7 +426,7 @@ const stepsContent = [
                 it.
               </Paragraph>
               <Image
-                src="docs/img/InstallationSetup docs.png"
+                src="https://eagleies.com/img/InstallationSetup%20docs.png"
                 alt="Add Booth"
                 style={{
                   width: "80%",
@@ -446,7 +446,7 @@ const stepsContent = [
                 after an event.
               </Paragraph>
               <Image
-                src="docs/img/TriggersURL docs.png"
+                src="https://eagleies.com/img/TriggersURL%20docs.png"
                 alt="Add Booth"
                 style={{
                   width: "80%",
