@@ -1,0 +1,26 @@
+[debug] [2025-05-24T14:26:51.073Z] ----------------------------------------------------------------------
+[debug] [2025-05-24T14:26:51.076Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\danie\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js login
+[debug] [2025-05-24T14:26:51.076Z] CLI Version:   14.4.0
+[debug] [2025-05-24T14:26:51.076Z] Platform:      win32
+[debug] [2025-05-24T14:26:51.077Z] Node Version:  v22.16.0
+[debug] [2025-05-24T14:26:51.077Z] Time:          Sat May 24 2025 21:26:51 GMT+0700 (Western Indonesia Time)
+[debug] [2025-05-24T14:26:51.077Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-05-24T14:26:51.079Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[info] i  Firebase optionally collects CLI and Emulator Suite usage and error reporting information to help improve our products. Data is collected in accordance with Google's privacy policy (https://policies.google.com/privacy) and is not used to identify you.
+ 
+[debug] [2025-05-24T14:26:51.711Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2025-05-24T14:26:51.711Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
+[debug] [2025-05-24T14:27:37.001Z] ExitPromptError: User force closed the prompt with SIGINT
+    at Interface.sigint (C:\Users\danie\AppData\Roaming\npm\node_modules\firebase-tools\node_modules\@inquirer\core\dist\commonjs\lib\create-prompt.js:101:37)
+    at Interface.emit (node:events:518:28)
+    at Interface.emit (node:domain:489:12)
+    at [_ttyWrite] [as _ttyWrite] (node:internal/readline/interface:1128:18)
+    at ReadStream.onkeypress (node:internal/readline/interface:267:20)
+    at ReadStream.emit (node:events:530:35)
+    at ReadStream.emit (node:domain:489:12)
+    at emitKeys (node:internal/readline/utils:370:14)
+    at emitKeys.next (<anonymous>)
+    at ReadStream.onData (node:internal/readline/emitKeypressEvents:64:36)
+[error] 
+[error] Error: An unexpected error has occurred.

@@ -20,10 +20,9 @@ import {
   GiftOutlined,
   PictureOutlined,
 } from "@ant-design/icons";
-import { useGetIdentity } from "@refinedev/core";
-import { collection, getDocs } from "firebase/firestore";
+import { useGetIdentity, useNavigation } from "@refinedev/core";
+import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import { db, app } from "../firebase";
-import { fetchTotalRevenueFromXendit } from "../utils/xendit";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { ColorModeContext } from "../contexts/color-mode";
 
@@ -40,6 +39,7 @@ interface UserIdentity {
   id: string;
   email: string;
   name: string;
+  xendit_api_key: string;
 }
 
 export function generateBoothCode() {
@@ -53,6 +53,7 @@ export function generateBoothCode() {
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
+  const { push } = useNavigation();
   const { data: userIdentity } = useGetIdentity<UserIdentity>();
   const { mode } = useContext(ColorModeContext);
 
@@ -63,20 +64,26 @@ const HomePage: React.FC = () => {
   const [errorBooths, setErrorBooths] = useState<string | null>(null);
   const [errorRevenue, setErrorRevenue] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState<boolean>(true);
+  const [user, setUser] = useState<UserIdentity>({
+    id: "",
+    email: "",
+    name: "",
+    xendit_api_key: "",
+  });
 
   // ✅ Firebase auth check
   useEffect(() => {
     const auth = getAuth(app);
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!user) {
-        navigate("/login"); // ⬅️ redirect jika belum login
+        push("/login"); // ⬅️ redirect jika belum login
       } else {
         setAuthLoading(false);
       }
     });
 
     return () => unsubscribe();
-  }, [navigate]);
+  }, [push]);
 
   const fetchBoothsData = async (currentUserId: string) => {
     setLoadingBooths(true);
@@ -104,37 +111,58 @@ const HomePage: React.FC = () => {
     }
   };
 
-  const fetchUserData = async (currentUserId: string) => {
-    setLoadingBooths(true);
-    setErrorBooths(null);
+  const fetchUserData = async (
+    currentUserId: string
+  ): Promise<UserIdentity | undefined> => {
+    // This function seems to have state updates for booths, which might be a mistake.
+    // I'll assume it should have its own loading/error state if needed, or none if it's a quick fetch.
     try {
-      const colRef = collection(db, "users", currentUserId);
-      const snapshot = await getDocs(colRef);
-      const userData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        email: doc.data().email || "Unnamed User",
-        name: doc.data().name || "Unnamed User",
-      })) as UserIdentity[];
-      setUser(userData[0] || { id: "", email: "", name: "Unnamed User" });
+      const userRef = doc(db, "Clients", currentUserId);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        const userPayload: UserIdentity = {
+          id: userSnap.id,
+          email: userData.email || "Unnamed User",
+          name: userData.name || "Unnamed User",
+          xendit_api_key: userData.xendit_api_key || "",
+        };
+        setUser(userPayload);
+        return userPayload;
+      }
+      return undefined;
     } catch (error: any) {
       const errorMessage =
         error.message || "There was an issue fetching your user data.";
-      setErrorUser(errorMessage);
       notification.error({
         message: "Error fetching user data",
         description: errorMessage,
       });
-    } finally {
-      setLoadingBooths(false);
+      return undefined;
     }
   };
 
-  const fetchRevenueData = async (currentUserId: string) => {
+  const fetchRevenueData = async (apiKey: string) => {
     setLoadingRevenue(true);
     setErrorRevenue(null);
     try {
-      const revenue = await fetchTotalRevenueFromXendit(currentUserId);
-      setTotalRevenue(revenue);
+      // Fetch balance from Xendit Balance API
+      const response = await fetch("https://api.xendit.co/balance", {
+        method: "GET",
+        headers: {
+          Authorization: `Basic ${btoa(apiKey + ":")}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch balance: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      // Xendit returns balance in the smallest currency unit (cents for IDR)
+      // data.balance is in cents, so we keep it as is for now
+      setTotalRevenue(data.balance || 0);
     } catch (error: any) {
       const errorMessage =
         error.message || "There was an issue fetching the total revenue.";
@@ -152,8 +180,13 @@ const HomePage: React.FC = () => {
     console.log("userIdentity in HomePage:", userIdentity);
     if (userIdentity?.id) {
       fetchBoothsData(userIdentity.id);
-      fetchRevenueData(userIdentity.id);
-      fetchUserData(userIdentity.id);
+      const userData = fetchUserData(userIdentity.id);
+      // Fetch revenue after we have user data with API key
+      userData.then((user) => {
+        if (user?.xendit_api_key) {
+          fetchRevenueData(user.xendit_api_key);
+        }
+      });
     }
   }, [userIdentity]);
 
@@ -212,9 +245,11 @@ const HomePage: React.FC = () => {
                 <br />
                 <Button
                   type="link"
-                  onClick={() =>
-                    userIdentity?.id && fetchRevenueData(userIdentity.id)
-                  }
+                  onClick={() => {
+                    if (user?.xendit_api_key) {
+                      fetchRevenueData(user.xendit_api_key);
+                    }
+                  }}
                 >
                   Retry
                 </Button>
@@ -412,6 +447,7 @@ const HomePage: React.FC = () => {
                         }}
                         actions={[
                           <div
+                            key="actions"
                             style={{
                               display: "flex",
                               flexWrap: "wrap",
@@ -495,11 +531,3 @@ const HomePage: React.FC = () => {
 };
 
 export default HomePage;
-function setErrorUser(errorMessage: any) {
-  throw new Error("Function not implemented.");
-}
-
-function setUser(arg0: UserIdentity) {
-  throw new Error("Function not implemented.");
-}
-
